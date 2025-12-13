@@ -1,0 +1,11 @@
+langchain==0.1.0
+langchain-community==0.0.13
+ollama==0.1.6
+pydantic==2.5.3
+flask==3.0.0
+flask-cors==4.0.0
+tensorflow==2.15.0
+pandas==2.1.4
+pillow==10.2.0
+werkzeug==3.0.1
+numpy==1.24.3

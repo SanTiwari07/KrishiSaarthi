@@ -1,0 +1,28 @@
+# Python virtual environment
+myenv/
+
+# Node modules
+node_modules/
+
+# Python bytecode
+__pycache__/
+*.py[cod]
+
+# Build / dist
+dist/
+build/
+
+# Environment files
+.env
+
+# VSCode
+.vscode/
+
+# Other
+*.log
+# Ignore ML model files
+*.h5
+*.hdf5
+*.pt
+*.pth
+*.onnx
