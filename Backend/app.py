@@ -12,8 +12,8 @@ import pandas as pd
 from pathlib import Path
 
 # Add project modules to path
-BUSINESS_ADVISOR_DIR = Path(__file__).resolve().parent.parent / 'Business Advisor'
-DISEASE_DETECTOR_DIR = Path(__file__).resolve().parent.parent / 'Disease Detector'
+BUSINESS_ADVISOR_DIR = Path(__file__).resolve().parent / 'services' / 'Business Advisor'
+DISEASE_DETECTOR_DIR = Path(__file__).resolve().parent / 'services' / 'Disease Detector'
 
 for path in (BUSINESS_ADVISOR_DIR, DISEASE_DETECTOR_DIR):
     path_str = str(path)
@@ -44,7 +44,7 @@ os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 # Load disease data CSV using project-root-relative paths
 MODEL_FILE = DISEASE_DETECTOR_DIR / 'plant_disease_model.h5'
-CSV_PATH = PROJECT_ROOT / 'Disease Detector' / 'crop_disease_data.csv'
+CSV_PATH = DISEASE_DETECTOR_DIR / 'crop_disease_data.csv'
 
 disease_data = None
 

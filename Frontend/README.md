@@ -1,11 +1,28 @@
+# KrishiSaarthi Frontend
 
-  # Agricultural Platform UI Design
+This is the main web application for KrishiSaarthi.
 
-  This is a code bundle for Agricultural Platform UI Design. The original project is available at https://www.figma.com/design/WH6At3vTnVMwPUXw8D0vJY/Agricultural-Platform-UI-Design.
+## Features
+- **Farmer Dashboard**: Overview of farming activities.
+- **Disease Detector**: Upload leaf images for AI diagnosis.
+- **Business Advisor**: Chat with AI for farming business advice.
+- **Green Credit**: Earn and trade credits for sustainable practices.
 
-  ## Running the code
+## Development
 
-  Run `npm i` to install the dependencies.
+```bash
+npm install
+npm run dev
+```
 
-  Run `npm run dev` to start the development server.
-  
+## Build
+
+```bash
+npm run build
+```
+
+## Folder Structure
+- `src/components`: Reusable UI components.
+- `src/pages`: Main application pages.
+- `src/contexts`: React Context definitions (Auth, Theme, Blockchain).
+- `src/firebase.ts`: Firebase configuration (Singleton instance).

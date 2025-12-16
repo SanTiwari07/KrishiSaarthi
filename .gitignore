@@ -26,3 +26,8 @@ build/
 *.pt
 *.pth
 *.onnx
+
+# Firebase
+.firebase/
+
+Frontend/src/firebase.ts
