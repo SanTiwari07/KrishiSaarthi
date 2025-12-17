@@ -3,7 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { useApp } from '../contexts/AppContext';
 import { Scan, ArrowLeft, Camera, Loader2, CheckCircle, Info, Upload } from 'lucide-react';
 
-const API_BASE_URL = 'http://localhost:5000/api';
+import { config } from '../config';
+
+const API_BASE_URL = config.API_BASE_URL;
 
 interface DiseaseResult {
     crop: string;
@@ -109,7 +111,7 @@ export default function CropDiseaseDetector() {
                                 <Camera className="w-12 h-12 text-green-600 dark:text-green-400" />
                             </div>
                             <p className="text-xl font-bold text-gray-700 dark:text-gray-300">{t('upload.image') || 'Upload Image'}</p>
-                            <p className="text-sm text-gray-500 mt-2">Tap to take photo or upload</p>
+                            <p className="text-sm text-gray-500 mt-2">{t('tap.to.upload')}</p>
                         </div>
                     )}
                     <input
@@ -150,18 +152,18 @@ export default function CropDiseaseDetector() {
                     <div className="mt-8 bg-white dark:bg-gray-900 rounded-2xl p-6 border-2 border-green-100 dark:border-green-900 shadow-lg animate-fade-in-up">
                         <div className="flex justify-between items-center mb-4 pb-4 border-b border-gray-100 dark:border-gray-700">
                             <h3 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                                <CheckCircle className="text-green-500" /> {result.disease}
+                                <CheckCircle className="text-green-500" /> {t(result.disease)}
                             </h3>
                             {result.confidence && (
                                 <span className="bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-100 px-3 py-1.5 rounded-lg text-sm font-bold border border-green-200 dark:border-green-800">
-                                    {Math.round(result.confidence * 100)}% Confidence
+                                    {Math.round(result.confidence * 100)}% {t('confidence')}
                                 </span>
                             )}
                         </div>
                         <p className="text-lg text-gray-700 dark:text-gray-300 mb-6 leading-relaxed">
-                            Detected in <strong>{result.crop}</strong>. Severity: <span className="capitalize font-bold">{result.severity}</span>.
+                            {t('detected.in')} <strong>{t(result.crop)}</strong>. {t('severity')}: <span className="capitalize font-bold">{t(`severity.${result.severity}` as any) || result.severity}</span>.
                             <br />
-                            {result.description}
+                            {t(result.description || '')}
                         </p>
 
                         <div className="grid md:grid-cols-2 gap-6">
@@ -170,18 +172,18 @@ export default function CropDiseaseDetector() {
                                 <ul className="space-y-2">
                                     {result.treatment.map((item: string, i: number) => (
                                         <li key={i} className="flex items-start text-gray-700 dark:text-gray-300">
-                                            <span className="mr-2 text-blue-500">•</span> {item}
+                                            <span className="mr-2 text-blue-500">•</span> {t(item)}
                                         </li>
                                     ))}
                                 </ul>
                             </div>
                             {result.prevention && (
                                 <div className="bg-green-50 dark:bg-green-900/20 p-5 rounded-xl border border-green-100 dark:border-green-800">
-                                    <h4 className="font-bold text-green-700 dark:text-green-300 mb-3 flex items-center gap-2 text-lg"><CheckCircle size={20} /> Prevention</h4>
+                                    <h4 className="font-bold text-green-700 dark:text-green-300 mb-3 flex items-center gap-2 text-lg"><CheckCircle size={20} /> {t('prevention')}</h4>
                                     <ul className="space-y-2">
                                         {result.prevention.map((item: string, i: number) => (
                                             <li key={i} className="flex items-start text-gray-700 dark:text-gray-300">
-                                                <span className="mr-2 text-green-500">•</span> {item}
+                                                <span className="mr-2 text-green-500">•</span> {t(item)}
                                             </li>
                                         ))}
                                     </ul>

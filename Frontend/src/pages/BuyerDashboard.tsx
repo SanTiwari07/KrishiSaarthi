@@ -142,7 +142,7 @@ export default function BuyerDashboard() {
     const handleBuy = async (id: number, amountAvailable: number) => {
         // Mock Buy for Demo items (ID > 900)
         if (id > 900) {
-            alert(`Demo Purchase Successful! You bought credits from Listing #${id}.`);
+            alert(`${t('demo.purchase')} #${id}.`);
 
             // Remove from stored listings if it exists there
             const storedListings = JSON.parse(localStorage.getItem('demoListings') || '[]');
@@ -162,12 +162,12 @@ export default function BuyerDashboard() {
 
         if (!blockchainState?.marketplaceContract) return;
 
-        const amountToBuyStr = prompt(`How much to buy? (Max: ${amountAvailable})`, amountAvailable.toString());
+        const amountToBuyStr = prompt(`${t('prompt.buy')} ${amountAvailable})`, amountAvailable.toString());
         if (!amountToBuyStr) return;
 
         const amountToBuy = parseFloat(amountToBuyStr);
         if (isNaN(amountToBuy) || amountToBuy <= 0 || amountToBuy > amountAvailable) {
-            alert(`Please enter a valid amount between 1 and ${amountAvailable}.`);
+            alert(`${t('error.invalid_amount')} ${amountAvailable}.`);
             return;
         }
 
@@ -178,7 +178,7 @@ export default function BuyerDashboard() {
                 id,
                 amountToBuy
             );
-            alert('Purchase Successful!');
+            alert(t('success.purchase'));
             loadListings(); // Refresh
         } catch (err: any) {
             console.error("Buy failed", err);
@@ -195,9 +195,9 @@ export default function BuyerDashboard() {
                     <ShoppingCart size={64} className="text-blue-600 dark:text-blue-400" />
                 </div>
                 <div className="text-center max-w-lg">
-                    <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-3">{t('marketplace') || 'Marketplace'}</h1>
+                    <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-3">{t('marketplace.title')}</h1>
                     <p className="text-lg text-gray-600 dark:text-gray-400 mb-8">
-                        Connect your wallet to browse and purchase verified green credits.
+                        {t('marketplace.desc')}
                     </p>
                     <button
                         onClick={connectWallet}
@@ -205,7 +205,7 @@ export default function BuyerDashboard() {
                         className="bg-primary text-white px-8 py-4 rounded-xl font-bold text-xl hover:bg-primary-dark transition-all shadow-lg hover:shadow-green-500/30 flex items-center gap-3 transform hover:-translate-y-1"
                     >
                         {isConnecting ? <Loader2 className="animate-spin" /> : <Wallet />}
-                        {isConnecting ? 'Connecting...' : 'Connect Wallet'}
+                        {isConnecting ? t('connecting') : t('connect.wallet')}
                     </button>
                 </div>
             </div>
@@ -220,8 +220,8 @@ export default function BuyerDashboard() {
         <div className="max-w-7xl mx-auto px-4 py-8">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('marketplace') || 'Green Credit Marketplace'}</h1>
-                    <p className="text-gray-500">{t('investFuture') || 'Invest in verified sustainable farming projects'}</p>
+                    <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('marketplace.title')}</h1>
+                    <p className="text-gray-500">{t('investFuture')}</p>
                 </div>
                 <div className="flex gap-2">
                     <button
@@ -229,10 +229,10 @@ export default function BuyerDashboard() {
                         className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400 border border-blue-100 dark:border-blue-800 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors"
                     >
                         <RefreshCw size={18} className={loading && marketplaceCredits.length > 0 ? "animate-spin" : ""} />
-                        {t('refresh') || 'Refresh'}
+                        {t('refresh')}
                     </button>
                     <button className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-                        <Filter size={18} /> {t('filter') || 'Filter'}
+                        <Filter size={18} /> {t('filter')}
                     </button>
                 </div>
             </div>
@@ -243,29 +243,29 @@ export default function BuyerDashboard() {
                         <div className="h-40 bg-gray-200 dark:bg-gray-700 relative flex items-center justify-center">
                             <Leaf size={48} className="text-gray-400" />
                             <div className="absolute top-4 right-4 bg-white dark:bg-gray-800 px-3 py-1 rounded-full text-xs font-bold shadow-sm uppercase tracking-wide">
-                                {credit.activityType}
+                                {t(`act.${credit.activityType.toLowerCase()}` as any) || credit.activityType}
                             </div>
                         </div>
 
                         <div className="p-6">
                             <div className="flex justify-between items-start mb-4">
                                 <div>
-                                    <h3 className="font-bold text-lg text-gray-900 dark:text-white capitalize">{credit.activityType} Credit</h3>
+                                    <h3 className="font-bold text-lg text-gray-900 dark:text-white capitalize">{t(`act.${credit.activityType.toLowerCase()}` as any) || credit.activityType} {t('credit.suffix')}</h3>
                                     <p className="text-sm text-gray-500 dark:text-gray-400">{credit.farmerName} • {credit.location}</p>
                                 </div>
                             </div>
 
                             <div className="space-y-3 mb-6">
                                 <div className="flex justify-between text-sm">
-                                    <span className="text-gray-500 dark:text-gray-400">{t('quantity') || 'Quantity'}</span>
-                                    <span className="font-semibold dark:text-gray-200">{credit.creditAmount} {t('amount') || 'Credits'}</span>
+                                    <span className="text-gray-500 dark:text-gray-400">{t('quantity')}</span>
+                                    <span className="font-semibold dark:text-gray-200">{credit.creditAmount} {t('amount')}</span>
                                 </div>
                                 <div className="flex justify-between text-sm">
-                                    <span className="text-gray-500 dark:text-gray-400">{t('impact') || 'Eco Impact'}</span>
+                                    <span className="text-gray-500 dark:text-gray-400">{t('impact')}</span>
                                     <span className="font-semibold dark:text-gray-200 text-green-600">50kg CO2e</span>
                                 </div>
                                 <div className="flex justify-between text-sm items-center pt-2 border-t border-gray-100 dark:border-gray-700">
-                                    <span className="text-gray-500 dark:text-gray-400">{t('price') || 'Price'}</span>
+                                    <span className="text-gray-500 dark:text-gray-400">{t('price')}</span>
                                     <span className="text-2xl font-bold text-gray-900 dark:text-white">₹{credit.price || 100}</span>
                                 </div>
                             </div>
@@ -281,7 +281,7 @@ export default function BuyerDashboard() {
                                 {buyingId === credit.id ? (
                                     <Loader2 className="animate-spin" />
                                 ) : (
-                                    <><ShoppingCart size={18} /> {t('buy') || 'Buy Now'}</>
+                                    <><ShoppingCart size={18} /> {t('buy')}</>
                                 )}
                             </button>
                         </div>

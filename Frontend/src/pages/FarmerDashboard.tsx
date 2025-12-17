@@ -99,10 +99,10 @@ export default function FarmerDashboard() {
 
                     {/* Support Card */}
                     <div className="mt-8 bg-gradient-to-br from-green-50 to-emerald-100 dark:from-green-900/20 dark:to-emerald-900/20 p-5 rounded-3xl border border-green-100 dark:border-green-800/30">
-                        <h4 className="font-bold text-green-800 dark:text-green-200 mb-2">Need Help?</h4>
-                        <p className="text-sm text-green-700 dark:text-green-300 mb-4 opacity-80">Our support team is available 24/7.</p>
+                        <h4 className="font-bold text-green-800 dark:text-green-200 mb-2">{t('need.help')}</h4>
+                        <p className="text-sm text-green-700 dark:text-green-300 mb-4 opacity-80">{t('support.desc')}</p>
                         <button className="w-full py-2 bg-white dark:bg-green-800 text-green-700 dark:text-green-100 text-sm font-bold rounded-xl shadow-sm hover:shadow transition-all">
-                            Contact Support
+                            {t('contact.support')}
                         </button>
                     </div>
                 </div>
@@ -132,35 +132,35 @@ export default function FarmerDashboard() {
 
                     {/* Statistics Section */}
                     <div>
-                        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Your Impact</h2>
+                        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">{t('your.impact')}</h2>
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                             <div className="bg-white dark:bg-gray-800 p-6 rounded-3xl border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-md transition-shadow">
                                 <div className="flex justify-between items-start mb-4">
                                     <div className="p-3 bg-green-50 rounded-2xl text-green-600"><TrendingUp size={28} /></div>
                                     <span className="text-xs font-bold bg-green-100 text-green-800 px-3 py-1 rounded-full">+12%</span>
                                 </div>
-                                <p className="text-gray-500 text-sm mb-1 font-medium uppercase tracking-wide">Farm Land</p>
-                                <h3 className="text-3xl font-extrabold text-gray-900 dark:text-white">{user?.farmLand || 0} Ac</h3>
+                                <p className="text-gray-500 text-sm mb-1 font-medium uppercase tracking-wide">{t('farm.land.label')}</p>
+                                <h3 className="text-3xl font-extrabold text-gray-900 dark:text-white">{user?.farmLand || 0} {t('unit.acres')}</h3>
                             </div>
                             <div className="bg-white dark:bg-gray-800 p-6 rounded-3xl border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-md transition-shadow">
                                 <div className="flex justify-between items-start mb-4">
                                     <div className="p-3 bg-yellow-50 rounded-2xl text-yellow-600"><Award size={28} /></div>
                                 </div>
-                                <p className="text-gray-500 text-sm mb-1 font-medium uppercase tracking-wide">Credits Earned</p>
+                                <p className="text-gray-500 text-sm mb-1 font-medium uppercase tracking-wide">{t('credits.earned')}</p>
                                 <h3 className="text-3xl font-extrabold text-gray-900 dark:text-white">{credits}</h3>
                             </div>
                             <div className="bg-white dark:bg-gray-800 p-6 rounded-3xl border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-md transition-shadow">
                                 <div className="flex justify-between items-start mb-4">
                                     <div className="p-3 bg-blue-50 rounded-2xl text-blue-600"><History size={28} /></div>
                                 </div>
-                                <p className="text-gray-500 text-sm mb-1 font-medium uppercase tracking-wide">Pending</p>
+                                <p className="text-gray-500 text-sm mb-1 font-medium uppercase tracking-wide">{t('pending')}</p>
                                 <h3 className="text-3xl font-extrabold text-gray-900 dark:text-white">{pendingCount}</h3>
                             </div>
                             <div className="bg-white dark:bg-gray-800 p-6 rounded-3xl border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-md transition-shadow">
                                 <div className="flex justify-between items-start mb-4">
                                     <div className="p-3 bg-purple-50 rounded-2xl text-purple-600"><Scan size={28} /></div>
                                 </div>
-                                <p className="text-gray-500 text-sm mb-1 font-medium uppercase tracking-wide">Crops Scanned</p>
+                                <p className="text-gray-500 text-sm mb-1 font-medium uppercase tracking-wide">{t('crops.scanned')}</p>
                                 <h3 className="text-3xl font-extrabold text-gray-900 dark:text-white">{user?.scansCount || 0}</h3>
                             </div>
                         </div>

@@ -3,8 +3,20 @@ import { Link } from 'react-router-dom';
 import { useApp } from '../contexts/AppContext';
 import { Leaf, Award, TrendingUp, Users, Sprout, CheckCircle, GraduationCap, ArrowRight, Coins, AlertTriangle } from 'lucide-react';
 
+// Zero Mile Photos
+import photo1 from '../assets/zero-mile/photo1.jpeg';
+import photo2 from '../assets/zero-mile/photo2.jpeg';
+import photo3 from '../assets/zero-mile/photo3.jpeg';
+import photo4 from '../assets/zero-mile/photo4.jpeg';
+import photo5 from '../assets/zero-mile/photo5.jpeg';
+import photo6 from '../assets/zero-mile/photo6.jpeg';
+import photo7 from '../assets/zero-mile/photo7.jpeg';
+import photo8 from '../assets/zero-mile/photo8.jpeg';
+
 export default function Landing() {
     const { t } = useApp();
+
+    const zeroMilePhotos = [photo1, photo2, photo3, photo4, photo5, photo6, photo7, photo8];
 
     const features = [
         {
@@ -28,7 +40,7 @@ export default function Landing() {
         {
             icon: <GraduationCap className="w-10 h-10 text-purple-600" />,
             title: t('contact.expert'),
-            desc: t('business.advisor.desc'), // Reusing desc for now or add new key
+            desc: t('contact.expert.desc'),
             color: 'bg-purple-100',
         }
     ];
@@ -81,14 +93,14 @@ export default function Landing() {
                                 {t('app.tagline')}
                             </div>
                             <h1 className="text-5xl md:text-7xl font-extrabold text-gray-900 dark:text-white mb-8 leading-tight tracking-tight drop-shadow-sm">
-                                Empowering Farmers with <span className="text-primary">AI & Blockchain</span>
+                                {t('hero.empowering')} <span className="text-primary">{t('hero.ai_blockchain')}</span>
                             </h1>
                             <p className="text-xl md:text-2xl text-gray-600 dark:text-gray-300 mb-10 leading-relaxed max-w-xl">
-                                One-stop solution for early crop disease detection, smart business advice, and earning green credits.
+                                {t('hero.desc')}
                             </p>
                             <div className="flex flex-col sm:flex-row gap-5">
                                 <button onClick={scrollToFeatures} className="px-10 py-5 bg-gradient-to-r from-primary to-green-600 text-white font-bold rounded-2xl shadow-xl hover:shadow-green-500/40 hover:-translate-y-1 transition-all text-xl text-center">
-                                    Overview
+                                    {t('overview')}
                                 </button>
                                 <Link to="/signup" className="px-10 py-5 bg-white dark:bg-gray-800 text-gray-800 dark:text-white font-bold rounded-2xl shadow-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-all text-xl border border-gray-200 dark:border-gray-700 text-center flex items-center justify-center gap-2 group backdrop-blur-sm">
                                     {t('get.started')} <ArrowRight size={24} className="group-hover:translate-x-1 transition-transform" />
@@ -128,8 +140,8 @@ export default function Landing() {
                                             <AlertTriangle size={24} className="text-red-500" />
                                         </div>
                                         <div>
-                                            <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Analysis</p>
-                                            <p className="text-lg font-bold text-gray-900 dark:text-white">Disease Detected</p>
+                                            <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">{t('analysis')}</p>
+                                            <p className="text-lg font-bold text-gray-900 dark:text-white">{t('disease.detected')}</p>
                                         </div>
                                     </div>
                                 </div>
@@ -141,7 +153,7 @@ export default function Landing() {
                                             <Coins size={24} className="text-yellow-600" />
                                         </div>
                                         <div>
-                                            <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Earnings</p>
+                                            <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">{t('earnings')}</p>
                                             <p className="text-lg font-bold text-gray-900 dark:text-white">+50 Credits</p>
                                         </div>
                                     </div>
@@ -154,8 +166,8 @@ export default function Landing() {
                                             <TrendingUp size={24} className="text-blue-600" />
                                         </div>
                                         <div>
-                                            <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Advisory</p>
-                                            <p className="text-lg font-bold text-gray-900 dark:text-white">Price Rising</p>
+                                            <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">{t('business')}</p>
+                                            <p className="text-lg font-bold text-gray-900 dark:text-white">{t('advisory')}</p>
                                         </div>
                                     </div>
                                 </div>
@@ -170,9 +182,9 @@ export default function Landing() {
             <section id="features" className="py-24 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="text-center mb-20">
-                        <h2 className="text-4xl font-extrabold text-gray-900 dark:text-white mb-6">Key Features</h2>
+                        <h2 className="text-4xl font-extrabold text-gray-900 dark:text-white mb-6">{t('key.features')}</h2>
                         <div className="w-24 h-1.5 bg-gradient-to-r from-primary to-green-300 mx-auto rounded-full"></div>
-                        <p className="mt-4 text-xl text-gray-500 max-w-2xl mx-auto">Everything you need to succeed in modern sustainable farming.</p>
+                        <p className="mt-4 text-xl text-gray-500 max-w-2xl mx-auto">{t('features.desc')}</p>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
@@ -227,14 +239,35 @@ export default function Landing() {
                 </div>
             </section>
 
+            {/* Validation Phase: Zero Mile */}
+            <section className="py-24 bg-gray-50 dark:bg-gray-900/50">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <h2 className="text-3xl md:text-4xl font-extrabold text-gray-900 dark:text-white mb-12 text-center">
+                        {t('validation.zero_mile')}
+                    </h2>
+
+                    <div className="flex gap-6 overflow-x-auto pb-8 scrollbar-hide snap-x snap-mandatory -mx-4 px-4 md:mx-0 md:px-0">
+                        {zeroMilePhotos.map((photo, idx) => (
+                            <div key={idx} className="h-[300px] md:h-[400px] flex-shrink-0 snap-center rounded-2xl overflow-hidden shadow-lg hover:scale-[1.02] transition-transform duration-300 relative group">
+                                <img
+                                    src={photo}
+                                    alt={`Zero Mile Initiative ${idx + 1}`}
+                                    className="h-full w-auto max-w-none object-contain"
+                                />
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </section>
+
             {/* Call to Action Section */}
             <section className="py-24 relative overflow-hidden rounded-t-[3rem] -mt-10 bg-gradient-to-br from-primary to-green-800 shadow-inner">
                 <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10 mix-blend-overlay"></div>
                 <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-transparent to-black/20"></div>
 
                 <div className="max-w-5xl mx-auto px-4 text-center relative z-10">
-                    <h2 className="text-4xl md:text-6xl font-extrabold text-white mb-8 drop-shadow-md">Ready to Transform Your Farming?</h2>
-                    <p className="text-xl md:text-2xl text-green-100 mb-12 max-w-3xl mx-auto">Join thousands of farmers using KrishiSaarthi to improve yields and earn more.</p>
+                    <h2 className="text-4xl md:text-6xl font-extrabold text-white mb-8 drop-shadow-md">{t('ready.transform')}</h2>
+                    <p className="text-xl md:text-2xl text-green-100 mb-12 max-w-3xl mx-auto">{t('join.farmers')}</p>
                     <Link to="/signup" className="inline-flex items-center px-12 py-6 bg-white text-primary font-bold text-2xl rounded-2xl shadow-2xl hover:bg-gray-100 transform hover:-translate-y-1 transition-all">
                         {t('get.started')} <ArrowRight size={32} className="ml-3" />
                     </Link>

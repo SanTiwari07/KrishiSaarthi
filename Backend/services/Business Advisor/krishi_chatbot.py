@@ -12,6 +12,29 @@ from langchain.memory import ConversationBufferMemory
 from langchain.prompts import PromptTemplate
 from pydantic import BaseModel
 import json
+import re
+
+# ============================================
+# BUSINESS OPTIONS (STRICT LIST)
+# ============================================
+
+BUSINESS_OPTIONS = [
+    {"id": "1", "title": "FLOWER PLANTATION (GERBERA)"},
+    {"id": "2", "title": "PACKAGED DRINKING WATER BUSINESS"},
+    {"id": "3", "title": "AMUL FRANCHISE BUSINESS"},
+    {"id": "4", "title": "SPIRULINA FARMING (ALGAE)"},
+    {"id": "5", "title": "DAIRY FARMING (6–8 COW UNIT)"},
+    {"id": "6", "title": "GOAT MILK FARMING (20–25 MILCH GOATS UNIT)"},
+    {"id": "7", "title": "MUSHROOM FARMING (OYSTER)"},
+    {"id": "8", "title": "POULTRY FARMING (BROILER)"},
+    {"id": "9", "title": "VERMICOMPOST PRODUCTION"},
+    {"id": "10", "title": "PLANT NURSERY"},
+    {"id": "11", "title": "COW DUNG ORGANIC MANURE & BIO-INPUTS"},
+    {"id": "12", "title": "COW DUNG PRODUCTS (DHOOP, DIYAS)"},
+    {"id": "13", "title": "LEAF PLATE (DONA–PATTAL) MANUFACTURING"},
+    {"id": "14", "title": "AGRI-INPUT TRADING"},
+    {"id": "15", "title": "INLAND FISH FARMING (POND-BASED)"}
+]
 
 # ============================================
 # GLOBAL CONFIGURATION
@@ -41,6 +64,10 @@ class FarmerProfile(BaseModel):
     time_availability: str  # full-time/part-time
     experience_years: Optional[int] = 0
     language: str = "english"  # english/hindi/hinglish
+    selling_preference: Optional[str] = None
+    recovery_timeline: Optional[str] = None
+    loss_tolerance: Optional[str] = None
+    risk_preference: Optional[str] = None
     
     def to_context(self) -> str:
         """Convert profile to natural language context for AI"""
@@ -57,6 +84,10 @@ FARMER PROFILE:
 - Time Availability: {self.time_availability}
 - Years of Experience: {self.experience_years}
 - Preferred Language: {self.language}
+- Selling Preference: {self.selling_preference or 'Not specified'}
+- Investment Recovery Timeline: {self.recovery_timeline or 'Not specified'}
+- Loss Tolerance (First Year): {self.loss_tolerance or 'Not specified'}
+- Behavioral Risk Preference: {self.risk_preference or 'Not specified'}
 """
         return context
 
@@ -221,6 +252,81 @@ KrishiSaarthi AI:"""
         """Clear conversation history"""
         self.memory.clear()
         print("🗑️  Conversation memory cleared")
+
+    def generate_recommendations(self) -> List[dict]:
+        """Generate top 3 business recommendations based on profile"""
+        
+        prompt = f"""
+        Analyze this farmer's profile:
+        {self.profile.to_context()}
+        
+        Available Business Options:
+        {json.dumps(BUSINESS_OPTIONS, indent=2)}
+        
+        Task:
+        Select exactly 3 business options from the list above that best match the farmer's land, capital, skills, and risk profile.
+        
+        Return ONLY a JSON array with this format:
+        [
+            {{
+                "id": "business_id",
+                "title": "Exact Title from list",
+                "reason": "Why this is a good fit (1 sentence)",
+                "match_score": 95,
+                "estimated_cost": "Estimated cost string",
+                "profit_potential": "Estimated profit string",
+                "requirements": ["Req 1", "Req 2"]
+            }},
+            ...
+        ]
+        
+        Do not add any markdown formatting (like ```json). Just the raw JSON string.
+        """
+        
+        try:
+            print("🤔 Generating recommendations...")
+            response = self.llm.invoke(prompt)
+            
+            # Clean response if it contains markdown
+            cleaned_response = re.sub(r'```json\s*|\s*```', '', response).strip()
+            
+            recommendations = json.loads(cleaned_response)
+            
+            # Ensure we strictly have 3 items and they match our ID list
+            valid_ids = {b['id'] for b in BUSINESS_OPTIONS}
+            valid_recs = [r for r in recommendations if r.get('id') in valid_ids]
+            
+            return valid_recs[:3]
+            
+        except Exception as e:
+            print(f"❌ Error generating recommendations: {e}")
+            # Fallback to defaults if LLM fails
+            return [
+                {
+                    "id": "1", "title": "FLOWER PLANTATION (GERBERA)",
+                    "reason": "High-value crop suitable for modern farming.",
+                    "match_score": 90,
+                    "estimated_cost": "₹1 Cr+",
+                    "profit_potential": "₹20L+",
+                    "requirements": ["1 Acre Land", "Greenhouse"]
+                },
+                {
+                    "id": "5", "title": "DAIRY FARMING",
+                    "reason": "Stable daily income source.",
+                    "match_score": 85,
+                    "estimated_cost": "₹10-12 Lakh",
+                    "profit_potential": "₹20-40k/month",
+                    "requirements": ["Fodder Land", "Cattle Shed"]
+                },
+                {
+                    "id": "7", "title": "MUSHROOM FARMING",
+                    "reason": "Low land requirement and quick returns.",
+                    "match_score": 80,
+                    "estimated_cost": "₹1.5-3 Lakh",
+                    "profit_potential": "₹15-35k/month",
+                    "requirements": ["Small Shed", "Humidity Control"]
+                }
+            ]
 
 
 # ============================================

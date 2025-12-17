@@ -1,11 +1,14 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useApp } from '../contexts/AppContext';
-import { ArrowLeft, ArrowRight, MessageSquare, Phone, Download, TrendingUp, AlertTriangle, Leaf, User, Send, Briefcase, DollarSign, Ruler, Droplets, CheckCircle, Info, MapPin, Loader2 } from 'lucide-react';
+import { ArrowLeft, ArrowRight, MessageSquare, Phone, Download, TrendingUp, AlertTriangle, Leaf, User, Send, Briefcase, DollarSign, Ruler, Droplets, CheckCircle, Info, MapPin, Loader2, X } from 'lucide-react';
+import { BUSINESS_DETAILS } from '../data/businessData';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
-const API_BASE_URL = 'http://localhost:5000/api';
+import { config } from '../config';
+
+const API_BASE_URL = config.API_BASE_URL;
 
 type View = 'intro' | 'form' | 'results' | 'chat' | 'experts';
 
@@ -31,7 +34,7 @@ const Wrapper = ({ children }: { children: React.ReactNode }) => {
 
 
 export default function BusinessAdvisor() {
-    const { t } = useApp();
+    const { t, language } = useApp();
     const navigate = useNavigate();
     const location = useLocation();
     const [view, setView] = useState<View>('intro');
@@ -41,9 +44,15 @@ export default function BusinessAdvisor() {
     const [sessionId, setSessionId] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [messages, setMessages] = useState<ChatMessage[]>([
-        { id: '1', sender: 'ai', text: 'Namaste! I am your KrishiSaarthi Advisor. Ask me about crops, prices, or schemes.', timestamp: new Date() }
-    ]);
+    const [messages, setMessages] = useState<ChatMessage[]>([]);
+
+    // Initialize greeting effect
+    useEffect(() => {
+        setMessages([
+            { id: '1', sender: 'ai', text: t('chat.greeting'), timestamp: new Date() }
+        ]);
+    }, [t]);
+
     const [chatInput, setChatInput] = useState('');
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -53,12 +62,25 @@ export default function BusinessAdvisor() {
         land: '',
         waterSource: 'Rainfed',
         experience: '',
-        interests: [] as string[]
+        interests: [] as string[],
+        marketAccess: '',
+        sellingPreference: '',
+        riskComfort: '',
+        investmentTimeline: '',
+        lossTolerance: '',
+        riskPreference: ''
     });
 
+    // Dynamic Recommendations State
+    const [recommendations, setRecommendations] = useState<any[]>([]);
+
+    const [isAcknowledged, setIsAcknowledged] = useState(false);
+    const [selectedBusinessId, setSelectedBusinessId] = useState<string | null>(null);
+    const [pendingContext, setPendingContext] = useState<{ title: string; data: string } | null>(null);
+
     const interestOptions = [
-        'Dairy Farming', 'Poultry', 'Organic Vegetables', 'Goat Farming',
-        'Beekeeping', 'Mushroom Cultivation', 'Fishery', 'Sericulture'
+        'Dairy Farming', 'Poultry', 'Greenhouse Farming', 'Goat Farming',
+        'Shop Handling', 'Factory Business', 'Fishery', 'Mushroom Cultivation'
     ];
 
     const waterOptions = ['Rainfed', 'Canal Irrigation', 'Borewell', 'Drip Irrigation', 'River Nearby'];
@@ -77,6 +99,33 @@ export default function BusinessAdvisor() {
     const scrollToBottom = () => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     useEffect(scrollToBottom, [messages]);
 
+    // Handle Pending Context Trigger
+    useEffect(() => {
+        if (view === 'chat' && pendingContext) {
+            const initContextChat = async () => {
+                // UI Message (Short)
+                const uiText = `I am interested in ${pendingContext.title}. Can you help me understand the risks and profits?`;
+
+                // API Message (Long with Context)
+                const apiText = `User is interested in ${pendingContext.title}. 
+                
+                HERE IS THE STRICT DATA SOURCE YOU MUST USE:
+                ${pendingContext.data}
+                
+                User Question: ${uiText}
+                
+                Instructions:
+                1. Answer detailed questions based ONLY on the provided data.
+                2. If the user asks about ROI, Investment, or Risks, quote the data exactly.
+                3. Be helpful and encouraging.`;
+
+                await handleSendMessage(uiText, apiText);
+                setPendingContext(null); // Clear context after sending
+            };
+            initContextChat();
+        }
+    }, [view, pendingContext]);
+
     // --- API Logic ---
 
     const initializeAdvisor = async () => {
@@ -90,18 +139,27 @@ export default function BusinessAdvisor() {
                     name: 'Farmer',
                     land_size: parseFloat(formData.land) || 5.0,
                     capital: parseFloat(formData.budget) || 100000,
-                    market_access: 'moderate', // Defaulting for simplicity
+                    market_access: formData.marketAccess || 'moderate',
                     skills: formData.interests.map(s => s.toLowerCase()),
-                    risk_level: 'low',
+                    risk_level: formData.riskComfort || 'low',
                     time_availability: 'full-time',
                     experience_years: parseFloat(formData.experience) || 0,
-                    language: 'english'
+                    language: language === 'hi' ? 'hindi' : language === 'mr' ? 'marathi' : 'english',
+                    selling_preference: formData.sellingPreference,
+                    recovery_timeline: formData.investmentTimeline,
+                    loss_tolerance: formData.lossTolerance,
+                    risk_preference: formData.riskPreference
                 })
             });
 
             if (!response.ok) throw new Error('Failed to initialize advisor');
             const data = await response.json();
             setSessionId(data.session_id);
+
+            if (data.recommendations && data.recommendations.length > 0) {
+                setRecommendations(data.recommendations);
+            }
+
             setView('results');
         } catch (err) {
             console.error('Error initializing:', err);
@@ -119,7 +177,10 @@ export default function BusinessAdvisor() {
             const initResponse = await fetch(`${API_BASE_URL}/business-advisor/init`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name: 'Farmer', language: 'english' }) // Minimal init
+                body: JSON.stringify({
+                    name: 'Farmer',
+                    language: language === 'hi' ? 'hindi' : language === 'mr' ? 'marathi' : 'english'
+                })
             });
             if (!initResponse.ok) throw new Error('Failed to init');
             const initData = await initResponse.json();
@@ -149,8 +210,9 @@ export default function BusinessAdvisor() {
         }
     };
 
-    const handleSendMessage = async () => {
-        if (!chatInput.trim()) return;
+    const handleSendMessage = async (textOverride?: string, apiMessageOverride?: string) => {
+        const textToSend = textOverride || chatInput;
+        if (!textToSend.trim()) return;
 
         // If no session, try to init one silently (or handle error)
         if (!sessionId) {
@@ -159,7 +221,10 @@ export default function BusinessAdvisor() {
                 const res = await fetch(`${API_BASE_URL}/business-advisor/init`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ name: 'Farmer' })
+                    body: JSON.stringify({
+                        name: 'Farmer',
+                        language: language === 'hi' ? 'hindi' : language === 'mr' ? 'marathi' : 'english'
+                    })
                 });
                 const d = await res.json();
                 setSessionId(d.session_id);
@@ -169,7 +234,7 @@ export default function BusinessAdvisor() {
         const userMsg: ChatMessage = {
             id: Date.now().toString(),
             sender: 'user',
-            text: chatInput,
+            text: textToSend,
             timestamp: new Date()
         };
         setMessages(prev => [...prev, userMsg]);
@@ -181,8 +246,8 @@ export default function BusinessAdvisor() {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    session_id: sessionId, // Use state or the one just fetched
-                    message: userMsg.text
+                    session_id: sessionId,
+                    message: apiMessageOverride || textToSend
                 })
             });
 
@@ -205,6 +270,23 @@ export default function BusinessAdvisor() {
 
     // --- Handlers ---
 
+    const startBusinessChat = (businessId: string) => {
+        const business = BUSINESS_DETAILS[businessId];
+        if (business) {
+            // Construct a data string from the sections
+            const dataString = business.sections.map(s => `${s.title}:\n${s.content.join('\n')}`).join('\n\n');
+
+            setPendingContext({
+                title: business.title,
+                data: `BASIC IDEA: ${business.basicIdea.join(' ')}\n\n${dataString}`
+            });
+            setView('chat');
+        } else {
+            // Fallback if no data (e.g. for unmapped businesses)
+            setView('chat');
+        }
+    };
+
     // --- Handlers ---
 
     const handleInterestToggle = (interest: string) => {
@@ -222,19 +304,11 @@ export default function BusinessAdvisor() {
     };
 
 
-    // Hardcoded Ideas (as per Frontend logic)
-    const businessSuggestions = [
+    // Use dynamic recommendations if available, otherwise default fallback (which shouldn't look like this, but kept for type safety)
+    const displaySuggestions = recommendations.length > 0 ? recommendations : [
         {
-            id: '1', title: 'Organic Vegetable Farming', description: 'High demand market with premium pricing for chemical-free produce.',
-            estimatedCost: '₹50,000 - ₹1L', profitPotential: '₹2L - ₹3L/yr', suitability: 95, requirements: ['Land > 1 acre', 'Water']
-        },
-        {
-            id: '2', title: 'Mushroom Cultivation', description: 'Low land requirement, year-round production possible.',
-            estimatedCost: '₹30,000', profitPotential: '₹1.5L/yr', suitability: 85, requirements: ['Shed', 'Cool Temp']
-        },
-        {
-            id: '3', title: 'Vermicompost Unit', description: 'Turn farm waste into gold. High demand for organic fertilizer.',
-            estimatedCost: '₹20,000', profitPotential: '₹1L/yr', suitability: 90, requirements: ['Org Waste', 'Shade']
+            id: '1', title: 'Greenhouse Farming (Fallback)', description: 'Please check your connection for personalized results.',
+            estimated_cost: 'N/A', profit_potential: 'N/A', suitability: 0, requirements: []
         }
     ];
 
@@ -252,13 +326,13 @@ export default function BusinessAdvisor() {
                     </div>
                     <h2 className="text-4xl font-extrabold text-gray-900 dark:text-white mb-6">{t('business.advisor') || 'Business Advisor'}</h2>
                     <p className="text-gray-600 dark:text-gray-300 mb-10 text-xl max-w-xl mx-auto leading-relaxed">
-                        Get personalized business plans, connect with experts, and grow your farming income with AI-driven insights.
+                        {t('business.advisor.desc')}
                     </p>
                     <button
                         onClick={() => setView('form')}
                         className="px-10 py-5 bg-primary text-white text-xl font-bold rounded-2xl shadow-xl hover:bg-primary-dark transition-all flex items-center justify-center gap-3 mx-auto transform hover:-translate-y-1"
                     >
-                        Start Assessment <ArrowRight size={28} />
+                        {t('start.assessment')} <ArrowRight size={28} />
                     </button>
                 </div>
             </Wrapper>
@@ -269,19 +343,19 @@ export default function BusinessAdvisor() {
         return (
             <Wrapper>
                 <div className="bg-white dark:bg-gray-800 p-10 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-700">
-                    <h2 className="text-3xl font-bold mb-8 text-gray-900 dark:text-white">Tell us about your resources</h2>
+                    <h2 className="text-3xl font-bold mb-8 text-gray-900 dark:text-white">{t('tell.us.resources')}</h2>
                     <form onSubmit={handleAssessmentSubmit} className="space-y-8">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
                                 <label className="block text-base font-bold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
-                                    <DollarSign size={18} className="text-green-500" /> Budget (₹)
+                                    <DollarSign size={18} className="text-green-500" /> {t('budget')}
                                 </label>
                                 <input type="number" required className="w-full p-4 border border-gray-300 rounded-xl dark:bg-gray-700 dark:border-gray-600 bg-white dark:text-white"
                                     placeholder="e.g. 100000" value={formData.budget} onChange={e => setFormData({ ...formData, budget: e.target.value })} />
                             </div>
                             <div>
                                 <label className="block text-base font-bold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
-                                    <Ruler size={18} className="text-blue-500" /> Land (Acres)
+                                    <Ruler size={18} className="text-blue-500" /> {t('land.acres')}
                                 </label>
                                 <input type="number" required className="w-full p-4 border border-gray-300 rounded-xl dark:bg-gray-700 dark:border-gray-600 bg-white dark:text-white"
                                     placeholder="e.g. 5" value={formData.land} onChange={e => setFormData({ ...formData, land: e.target.value })} />
@@ -291,16 +365,22 @@ export default function BusinessAdvisor() {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
                                 <label className="block text-base font-bold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
-                                    <Droplets size={18} className="text-cyan-500" /> Water Source
+                                    <Droplets size={18} className="text-cyan-500" /> {t('water.source')}
                                 </label>
                                 <select className="w-full p-4 border border-gray-300 rounded-xl dark:bg-gray-700 dark:border-gray-600 bg-white dark:text-white"
                                     value={formData.waterSource} onChange={e => setFormData({ ...formData, waterSource: e.target.value })}>
-                                    {waterOptions.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                                    {waterOptions.map(opt => {
+                                        const map: Record<string, string> = {
+                                            'Rainfed': 'opt.rainfed', 'Canal Irrigation': 'opt.canal', 'Borewell': 'opt.borewell',
+                                            'Drip Irrigation': 'opt.drip', 'River Nearby': 'opt.river'
+                                        };
+                                        return <option key={opt} value={opt}>{t(map[opt] || opt)}</option>;
+                                    })}
                                 </select>
                             </div>
                             <div>
                                 <label className="block text-base font-bold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
-                                    <User size={18} className="text-purple-500" /> Experience (Years)
+                                    <User size={18} className="text-purple-500" /> {t('experience.years')}
                                 </label>
                                 <input type="number" required className="w-full p-4 border border-gray-300 rounded-xl dark:bg-gray-700 dark:border-gray-600 bg-white dark:text-white"
                                     placeholder="e.g. 5" value={formData.experience} onChange={e => setFormData({ ...formData, experience: e.target.value })} />
@@ -308,23 +388,167 @@ export default function BusinessAdvisor() {
                         </div>
 
                         <div>
-                            <label className="block text-base font-bold text-gray-700 dark:text-gray-300 mb-4">Interests</label>
+                            <label className="block text-base font-bold text-gray-700 dark:text-gray-300 mb-4">{t('interests')}</label>
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                {interestOptions.map(option => (
-                                    <div key={option} onClick={() => handleInterestToggle(option)}
-                                        className={`p-4 rounded-xl border-2 cursor-pointer transition-all flex flex-col items-center justify-center text-center gap-2 h-28 ${formData.interests.includes(option) ? 'bg-blue-50 border-blue-500 text-blue-700 dark:bg-blue-900/30 dark:text-blue-200' : 'border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700'
-                                            }`}
-                                    >
-                                        <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${formData.interests.includes(option) ? 'bg-blue-500 border-blue-500 text-white' : 'border-gray-300'}`}>
-                                            {formData.interests.includes(option) && <CheckCircle size={16} />}
+                                {interestOptions.map(option => {
+                                    const map: Record<string, string> = {
+                                        'Dairy Farming': 'opt.dairy', 'Poultry': 'opt.poultry', 'Greenhouse Farming': 'opt.greenhouse',
+                                        'Goat Farming': 'opt.goat', 'Shop Handling': 'opt.shop', 'Factory Business': 'opt.factory',
+                                        'Fishery': 'opt.fishery', 'Mushroom Cultivation': 'opt.mushroom'
+                                    };
+                                    return (
+                                        <div key={option} onClick={() => handleInterestToggle(option)}
+                                            className={`p-4 rounded-xl border-2 cursor-pointer transition-all flex flex-col items-center justify-center text-center gap-2 h-28 ${formData.interests.includes(option) ? 'bg-blue-50 border-blue-500 text-blue-700 dark:bg-blue-900/30 dark:text-blue-200' : 'border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700'
+                                                }`}
+                                        >
+                                            <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${formData.interests.includes(option) ? 'bg-blue-500 border-blue-500 text-white' : 'border-gray-300'}`}>
+                                                {formData.interests.includes(option) && <CheckCircle size={16} />}
+                                            </div>
+                                            <span className="text-sm font-bold leading-tight">{t(map[option] || option)}</span>
                                         </div>
-                                        <span className="text-sm font-bold leading-tight">{option}</span>
-                                    </div>
-                                ))}
+                                    )
+                                })}
                             </div>
                         </div>
 
-                        <button type="submit" disabled={isLoading} className="w-full py-5 bg-primary text-white font-bold text-xl rounded-xl hover:bg-primary-dark transition-all shadow-lg mt-6">
+                        {/* Market & Strategy Section */}
+                        <div className="bg-gray-50 dark:bg-gray-900/30 p-6 rounded-2xl border border-gray-100 dark:border-gray-700 space-y-8">
+                            <h3 className="text-xl font-bold text-gray-900 dark:text-white border-b border-gray-200 dark:border-gray-700 pb-2">{t('market.strategy')}</h3>
+
+                            {/* 1. Market Access */}
+                            <div>
+                                <label className="block text-base font-bold text-gray-700 dark:text-gray-300 mb-3">
+                                    {t('market.access.q')}
+                                </label>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                    {['Village only', 'Small town within 10 km', 'City within 30 km', 'Direct buyers already available'].map(opt => {
+                                        const map: Record<string, string> = { 'Village only': 'opt.village', 'Small town within 10 km': 'opt.small_town', 'City within 30 km': 'opt.city', 'Direct buyers already available': 'opt.direct_buyers' };
+                                        return (
+                                            <label key={opt} className={`flex items-center gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all ${formData.marketAccess === opt ? 'border-primary bg-primary/5' : 'border-gray-200 dark:border-gray-700 hover:bg-white dark:hover:bg-gray-800'}`}>
+                                                <input type="radio" name="marketAccess" value={opt} checked={formData.marketAccess === opt} onChange={e => setFormData({ ...formData, marketAccess: e.target.value })} className="w-5 h-5 text-primary focus:ring-primary" />
+                                                <span className="font-medium text-gray-700 dark:text-gray-300">{t(map[opt] || opt)}</span>
+                                            </label>
+                                        )
+                                    })}
+                                </div>
+                            </div>
+
+                            {/* 2. Selling Preference */}
+                            <div>
+                                <label className="block text-base font-bold text-gray-700 dark:text-gray-300 mb-3">
+                                    {t('selling.pref.q')}
+                                </label>
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                    {['Yes, I can handle customers', 'Maybe, with guidance', 'No, I prefer bulk buyers only'].map(opt => {
+                                        const map: Record<string, string> = { 'Yes, I can handle customers': 'opt.yes_customers', 'Maybe, with guidance': 'opt.maybe_guidance', 'No, I prefer bulk buyers only': 'opt.no_bulk' };
+                                        return (
+                                            <label key={opt} className={`flex items-center gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all ${formData.sellingPreference === opt ? 'border-primary bg-primary/5' : 'border-gray-200 dark:border-gray-700 hover:bg-white dark:hover:bg-gray-800'}`}>
+                                                <input type="radio" name="sellingPreference" value={opt} checked={formData.sellingPreference === opt} onChange={e => setFormData({ ...formData, sellingPreference: e.target.value })} className="w-5 h-5 text-primary focus:ring-primary" />
+                                                <span className="font-medium text-gray-700 dark:text-gray-300">{t(map[opt] || opt)}</span>
+                                            </label>
+                                        )
+                                    })}
+                                </div>
+                            </div>
+
+                            {/* 3. Risk Comfort */}
+                            <div>
+                                <label className="block text-base font-bold text-gray-700 dark:text-gray-300 mb-3">
+                                    {t('risk.comfort.q')}
+                                </label>
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                    {['Very comfortable', 'Somewhat okay', 'Not comfortable at all'].map(opt => {
+                                        const map: Record<string, string> = { 'Very comfortable': 'opt.comfortable', 'Somewhat okay': 'opt.somewhat', 'Not comfortable at all': 'opt.not_comfortable' };
+                                        return (
+                                            <label key={opt} className={`flex items-center gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all ${formData.riskComfort === opt ? 'border-primary bg-primary/5' : 'border-gray-200 dark:border-gray-700 hover:bg-white dark:hover:bg-gray-800'}`}>
+                                                <input type="radio" name="riskComfort" value={opt} checked={formData.riskComfort === opt} onChange={e => setFormData({ ...formData, riskComfort: e.target.value })} className="w-5 h-5 text-primary focus:ring-primary" />
+                                                <span className="font-medium text-gray-700 dark:text-gray-300">{t(map[opt] || opt)}</span>
+                                            </label>
+                                        )
+                                    })}
+                                </div>
+                            </div>
+
+                            {/* 4. Investment Recovery Timeline */}
+                            <div>
+                                <label className="block text-base font-bold text-gray-700 dark:text-gray-300 mb-3">
+                                    {t('invest.timeline.q')}
+                                </label>
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                                    {['Less than 1 year', '1–2 years', '2–3 years', 'I can wait longer'].map(opt => {
+                                        const map: Record<string, string> = { 'Less than 1 year': 'opt.less_1yr', '1–2 years': 'opt.1_2yrs', '2–3 years': 'opt.2_3yrs', 'I can wait longer': 'opt.wait_longer' };
+                                        return (
+                                            <label key={opt} className={`flex items-center gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all ${formData.investmentTimeline === opt ? 'border-primary bg-primary/5' : 'border-gray-200 dark:border-gray-700 hover:bg-white dark:hover:bg-gray-800'}`}>
+                                                <input type="radio" name="investmentTimeline" value={opt} checked={formData.investmentTimeline === opt} onChange={e => setFormData({ ...formData, investmentTimeline: e.target.value })} className="w-5 h-5 text-primary focus:ring-primary" />
+                                                <span className="font-medium text-gray-700 dark:text-gray-300">{t(map[opt] || opt)}</span>
+                                            </label>
+                                        )
+                                    })}
+                                </div>
+                            </div>
+
+                            {/* 5. First-Year Loss Tolerance */}
+                            <div>
+                                <label className="block text-base font-bold text-gray-700 dark:text-gray-300 mb-3">
+                                    {t('loss.tolerance.q')}
+                                </label>
+                                <div className="flex flex-col gap-3">
+                                    {['I understand initial losses are possible', 'Small losses acceptable', 'I cannot afford losses'].map(opt => {
+                                        const map: Record<string, string> = { 'I understand initial losses are possible': 'opt.understand_loss', 'Small losses acceptable': 'opt.small_loss', 'I cannot afford losses': 'opt.no_loss' };
+                                        return (
+                                            <label key={opt} className={`flex items-center gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all ${formData.lossTolerance === opt ? 'border-primary bg-primary/5' : 'border-gray-200 dark:border-gray-700 hover:bg-white dark:hover:bg-gray-800'}`}>
+                                                <input type="radio" name="lossTolerance" value={opt} checked={formData.lossTolerance === opt} onChange={e => setFormData({ ...formData, lossTolerance: e.target.value })} className="w-5 h-5 text-primary focus:ring-primary" />
+                                                <span className="font-medium text-gray-700 dark:text-gray-300">{t(map[opt] || opt)}</span>
+                                            </label>
+                                        )
+                                    })}
+                                </div>
+                            </div>
+
+                            {/* 6. Behavioral Risk Preference */}
+                            <div>
+                                <label className="block text-base font-bold text-gray-700 dark:text-gray-300 mb-3">
+                                    {t('risk.pref.q')}
+                                </label>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                    {['Safe income, lower profit', 'Higher profit, higher risk'].map(opt => {
+                                        const map: Record<string, string> = { 'Safe income, lower profit': 'opt.safe_income', 'Higher profit, higher risk': 'opt.high_profit' };
+                                        return (
+                                            <label key={opt} className={`flex items-center gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all ${formData.riskPreference === opt ? 'border-primary bg-primary/5' : 'border-gray-200 dark:border-gray-700 hover:bg-white dark:hover:bg-gray-800'}`}>
+                                                <input type="radio" name="riskPreference" value={opt} checked={formData.riskPreference === opt} onChange={e => setFormData({ ...formData, riskPreference: e.target.value })} className="w-5 h-5 text-primary focus:ring-primary" />
+                                                <span className="font-medium text-gray-700 dark:text-gray-300">{t(map[opt] || opt)}</span>
+                                            </label>
+                                        )
+                                    })}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="bg-yellow-50 dark:bg-yellow-900/20 p-6 rounded-2xl border border-yellow-200 dark:border-yellow-700">
+                            <div className="flex items-center gap-2 mb-4">
+                                <AlertTriangle className="text-yellow-600 dark:text-yellow-500" size={24} />
+                                <h3 className="text-lg font-bold text-yellow-800 dark:text-yellow-400">{t('important.note')}</h3>
+                            </div>
+                            <div className="space-y-3 text-sm text-gray-700 dark:text-gray-300">
+                                <p>{t('note.content')}</p>
+                            </div>
+                        </div>
+
+                        {/* Acknowledgement Checkbox */}
+                        <div className="flex items-start gap-3 p-4 bg-gray-50 dark:bg-gray-700/30 rounded-xl border border-gray-100 dark:border-gray-600">
+                            <input
+                                type="checkbox"
+                                id="acknowledgement"
+                                checked={isAcknowledged}
+                                onChange={(e) => setIsAcknowledged(e.target.checked)}
+                                className="mt-1 w-5 h-5 text-primary rounded border-gray-300 focus:ring-primary cursor-pointer"
+                            />
+                            <label htmlFor="acknowledgement" className="text-sm font-medium text-gray-700 dark:text-gray-300 leading-relaxed cursor-pointer select-none">
+                                {t('acknowledgement')}
+                            </label>
+                        </div>
+
+                        <button type="submit" disabled={isLoading || !isAcknowledged} className="w-full py-5 bg-primary text-white font-bold text-xl rounded-xl hover:bg-primary-dark transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed">
                             {isLoading ? <Loader2 className="animate-spin mx-auto" /> : t('analyze') || 'Analyze'}
                         </button>
                     </form>
@@ -337,47 +561,137 @@ export default function BusinessAdvisor() {
         return (
             <Wrapper>
                 <div className="flex items-center justify-between mb-8">
-                    <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Recommended Businesses</h2>
-                    <button onClick={() => setView('form')} className="text-base text-primary font-bold hover:underline">Retake Assessment</button>
+                    <h2 className="text-3xl font-bold text-gray-900 dark:text-white">{t('recommended.businesses')}</h2>
+                    <button onClick={() => setView('form')} className="text-base text-primary font-bold hover:underline">{t('retake.assessment')}</button>
                 </div>
 
-                <div className="grid gap-8">
-                    {businessSuggestions.map(biz => (
-                        <div key={biz.id} className="bg-white dark:bg-gray-800 p-8 rounded-3xl shadow-md border border-gray-100 dark:border-gray-700 transition-all hover:shadow-xl">
-                            <div className="flex flex-col md:flex-row justify-between items-start mb-6 gap-4">
-                                <div>
-                                    <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">{biz.title}</h3>
-                                    <div className="flex items-center gap-2">
-                                        <span className="text-sm bg-green-100 text-green-800 px-3 py-1 rounded-full font-bold">{biz.suitability}% Match</span>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    {displaySuggestions.map((biz) => {
+                        const translatedTitle = t(`biz.${biz.id}.title`);
+                        const displayTitle = translatedTitle !== `biz.${biz.id}.title` ? translatedTitle : biz.title;
+
+                        return (
+                            <div key={biz.id} className="bg-white rounded-3xl shadow-xl hover:shadow-2xl transition-all duration-300 overflow-hidden border border-gray-100 flex flex-col h-full transform hover:-translate-y-2">
+                                {/* Card Header & Badge */}
+                                <div className="bg-gradient-to-r from-green-500 to-emerald-600 p-6 relative overflow-hidden">
+                                    <div className="absolute top-0 right-0 w-32 h-32 bg-white opacity-10 rounded-full blur-2xl transform translate-x-10 -translate-y-10"></div>
+                                    <div className="flex justify-between items-start mb-2">
+                                        <div className="bg-white/20 backdrop-blur-md px-3 py-1 rounded-full text-white text-sm font-medium border border-white/30">
+                                            {biz.match_score || biz.suitability}% {t('match')}
+                                        </div>
+                                        <Leaf className="text-white opacity-80" size={24} />
+                                    </div>
+                                    <h3 className="text-xl font-bold text-white mb-1 leading-tight min-h-[3.5rem] flex items-center">
+                                        {displayTitle}
+                                    </h3>
+                                </div>
+
+                                {/* Card Body */}
+                                <div className="p-6 flex-grow flex flex-col gap-4">
+                                    <p className="text-gray-600 text-sm leading-relaxed border-b border-gray-100 pb-4 min-h-[4rem]">
+                                        {biz.reason || biz.description}
+                                    </p>
+
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="bg-gray-50 p-3 rounded-xl border border-gray-100">
+                                            <div className="flex items-center gap-2 text-gray-500 mb-1 text-xs uppercase tracking-wide font-semibold">
+                                                <DollarSign size={14} /> {t('investment')}
+                                            </div>
+                                            <div className="font-bold text-gray-800 text-sm truncate" title={BUSINESS_DETAILS[biz.id]?.shortStats?.investment || biz.estimated_cost || biz.estimatedCost}>
+                                                {BUSINESS_DETAILS[biz.id]?.shortStats?.investment || biz.estimated_cost || biz.estimatedCost}
+                                            </div>
+                                        </div>
+                                        <div className="bg-green-50 p-3 rounded-xl border border-green-100">
+                                            <div className="flex items-center gap-2 text-green-600 mb-1 text-xs uppercase tracking-wide font-semibold">
+                                                <TrendingUp size={14} /> {t('profit')}
+                                            </div>
+                                            <div className="font-bold text-green-800 text-sm truncate" title={BUSINESS_DETAILS[biz.id]?.shortStats?.profit || biz.profit_potential || biz.profitPotential}>
+                                                {BUSINESS_DETAILS[biz.id]?.shortStats?.profit || biz.profit_potential || biz.profitPotential}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="mt-2">
+                                        <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">{t('requirements')}</div>
+                                        <div className="flex flex-wrap gap-2">
+                                            {biz.requirements && biz.requirements.length > 0 ? (
+                                                biz.requirements.slice(0, 3).map((req: string, i: number) => (
+                                                    <span key={i} className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-md border border-gray-200 truncate max-w-full">
+                                                        {req}
+                                                    </span>
+                                                ))
+                                            ) : (
+                                                <span className="text-gray-400 text-xs italic">{t('know.more')}</span>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
-                                <div className="text-left md:text-right bg-green-50 dark:bg-green-900/20 p-4 rounded-xl">
-                                    <p className="text-sm text-gray-500 uppercase tracking-wide font-semibold">Est. Profit</p>
-                                    <p className="text-2xl font-extrabold text-green-600 dark:text-green-400">{biz.profitPotential}</p>
+                                <div className="p-6 pt-0 flex gap-3 mt-auto">
+                                    <button onClick={() => startBusinessChat(biz.id)} className="flex-1 py-3 bg-blue-50 text-blue-700 rounded-xl font-bold text-sm hover:bg-blue-100 transition-colors flex items-center justify-center gap-1.5 border border-blue-200">
+                                        <MessageSquare size={18} /> <span className="whitespace-nowrap">{t('ask.chatbot')}</span>
+                                    </button>
+                                    <button onClick={() => setSelectedBusinessId(biz.id)} className="flex-1 py-3 bg-white border-2 border-gray-200 text-gray-800 rounded-xl font-bold text-sm hover:bg-gray-50 transition-colors flex items-center justify-center gap-1.5">
+                                        <Info size={18} /> <span className="whitespace-nowrap">{t('know.more')}</span>
+                                    </button>
                                 </div>
                             </div>
-                            <p className="text-lg text-gray-600 dark:text-gray-300 mb-6 leading-relaxed">{biz.description}</p>
-                            <div className="bg-gray-50 dark:bg-gray-900 p-6 rounded-2xl mb-8 grid grid-cols-1 md:grid-cols-2 gap-6 text-base">
-                                <div className="flex items-start gap-3">
-                                    <div className="mt-1"><DollarSign size={20} className="text-gray-400" /></div>
-                                    <div><span className="block text-gray-500 font-medium">Investment</span><span className="font-bold text-gray-900 dark:text-white text-lg">{biz.estimatedCost}</span></div>
+                        )
+                    })}
+                </div>
+                {selectedBusinessId && BUSINESS_DETAILS[selectedBusinessId] && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+                        <div className="bg-white dark:bg-gray-800 w-full max-w-4xl max-h-[90vh] rounded-3xl shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-200">
+                            {/* Header */}
+                            <div className="p-6 border-b border-gray-100 dark:border-gray-700 flex justify-between items-start bg-gray-50 dark:bg-gray-900/50">
+                                <div>
+                                    <h3 className="text-2xl font-bold text-gray-900 dark:text-white leading-tight">
+                                        {BUSINESS_DETAILS[selectedBusinessId].title}
+                                    </h3>
                                 </div>
-                                <div className="flex items-start gap-3">
-                                    <div className="mt-1"><CheckCircle size={20} className="text-gray-400" /></div>
-                                    <div><span className="block text-gray-500 font-medium">Requirements</span><span className="font-bold text-gray-900 dark:text-white">{biz.requirements.join(', ')}</span></div>
-                                </div>
+                                <button
+                                    onClick={() => setSelectedBusinessId(null)}
+                                    className="p-2 bg-gray-200 dark:bg-gray-700 rounded-full hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+                                >
+                                    <X size={24} className="text-gray-700 dark:text-gray-300" />
+                                </button>
                             </div>
-                            <div className="flex flex-col sm:flex-row gap-4">
-                                <button onClick={() => setView('chat')} className="flex-1 py-4 bg-blue-50 text-blue-700 rounded-xl font-bold text-lg hover:bg-blue-100 transition-colors flex items-center justify-center gap-2 border border-blue-200">
-                                    <MessageSquare size={22} /> Ask Chatbot
-                                </button>
-                                <button onClick={() => setView('experts')} className="flex-1 py-4 bg-white border-2 border-gray-200 text-gray-800 rounded-xl font-bold text-lg hover:bg-gray-50 transition-colors flex items-center justify-center gap-2">
-                                    <Phone size={22} /> Contact Expert
-                                </button>
+
+                            {/* Scrollable Content */}
+                            <div className="p-8 overflow-y-auto space-y-8">
+                                {/* Basic Idea */}
+                                <div className="bg-blue-50 dark:bg-blue-900/20 p-6 rounded-2xl border border-blue-100 dark:border-blue-800">
+                                    <h4 className="text-lg font-bold text-blue-800 dark:text-blue-300 mb-3 flex items-center gap-2">
+                                        <Info size={20} /> BASIC IDEA
+                                    </h4>
+                                    <ul className="list-disc list-inside space-y-2 text-gray-700 dark:text-gray-300 text-lg">
+                                        {BUSINESS_DETAILS[selectedBusinessId].basicIdea.map((line, idx) => (
+                                            <li key={idx}>{line}</li>
+                                        ))}
+                                    </ul>
+                                </div>
+
+                                {/* Key Details Grid */}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    {BUSINESS_DETAILS[selectedBusinessId].sections.map((section, idx) => (
+                                        <div key={idx} className="bg-gray-50 dark:bg-gray-700/30 p-5 rounded-2xl border border-gray-100 dark:border-gray-700">
+                                            <h5 className="font-bold text-gray-900 dark:text-white mb-3 uppercase text-sm tracking-wider border-b border-gray-200 dark:border-gray-600 pb-2">
+                                                {section.title}
+                                            </h5>
+                                            <ul className="space-y-2">
+                                                {section.content.map((item, i) => (
+                                                    <li key={i} className="text-gray-600 dark:text-gray-300 text-base leading-relaxed flex items-start gap-2">
+                                                        <span className="mt-1.5 w-1.5 h-1.5 bg-green-500 rounded-full flex-shrink-0"></span>
+                                                        <span>{item}</span>
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    ))}
+                                </div>
                             </div>
                         </div>
-                    ))}
-                </div>
+                    </div>
+                )}
             </Wrapper>
         );
     }
@@ -387,11 +701,11 @@ export default function BusinessAdvisor() {
             <Wrapper>
                 <div className="flex items-center justify-between mb-4">
                     <button onClick={() => setView('results')} className="text-gray-500 hover:text-primary flex items-center gap-2 font-bold text-lg transition-colors">
-                        <ArrowRight className="rotate-180" size={24} /> Back to Results
+                        <ArrowRight className="rotate-180" size={24} /> {t('back.to.results')}
                     </button>
                     <div className="flex items-center gap-2 px-4 py-2 bg-green-50 text-green-700 rounded-full font-bold text-sm">
                         <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                        Live Advisor
+                        {t('live.advisor')}
                     </div>
                 </div>
 
@@ -403,7 +717,7 @@ export default function BusinessAdvisor() {
                         </div>
                         <div>
                             <h3 className="font-bold text-xl text-gray-900 dark:text-white">KrishiSaarthi AI</h3>
-                            <p className="text-sm text-gray-500 font-medium">Expert Business Advisor</p>
+                            <p className="text-sm text-gray-500 font-medium">{t('expert.advisor')}</p>
                         </div>
                     </div>
 
@@ -463,13 +777,13 @@ export default function BusinessAdvisor() {
                             <input
                                 type="text"
                                 className="flex-grow bg-transparent px-6 py-3 focus:outline-none text-gray-800 dark:text-gray-200 placeholder-gray-400 font-medium"
-                                placeholder="Type your question here about farming, prices..."
+                                placeholder={t('ask.chatbot')}
                                 value={chatInput}
                                 onChange={(e) => setChatInput(e.target.value)}
                                 onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
                             />
                             <button
-                                onClick={handleSendMessage}
+                                onClick={() => handleSendMessage()}
                                 disabled={!chatInput.trim() || isLoading}
                                 className="p-3 bg-primary text-white rounded-full hover:bg-primary-dark disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md hover:shadow-lg hover:scale-105 active:scale-95 flex-shrink-0"
                             >
@@ -478,7 +792,7 @@ export default function BusinessAdvisor() {
                             </button>
                         </div>
                         <p className="text-center text-xs text-gray-400 mt-3 font-medium">
-                            AI advice may vary. Always consult with local experts.
+                            {t('ai.disclaimer')}
                         </p>
                     </div>
                 </div>
@@ -490,9 +804,9 @@ export default function BusinessAdvisor() {
         return (
             <Wrapper>
                 <button onClick={() => setView('results')} className="mb-6 text-gray-500 hover:text-primary flex items-center gap-2 font-bold text-lg">
-                    <ArrowRight className="rotate-180" size={24} /> Back to Results
+                    <ArrowRight className="rotate-180" size={24} /> {t('back.to.results')}
                 </button>
-                <h2 className="text-3xl font-bold mb-8 text-gray-900 dark:text-white">Connect with Experts</h2>
+                <h2 className="text-3xl font-bold mb-8 text-gray-900 dark:text-white">{t('connect.experts')}</h2>
                 <div className="grid gap-6">
                     {experts.map(expert => (
                         <div key={expert.id} className="bg-white dark:bg-gray-800 p-8 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-700 flex flex-col md:flex-row items-center gap-6 text-center md:text-left">
@@ -505,7 +819,7 @@ export default function BusinessAdvisor() {
                                 <p className="text-gray-500 mt-2 flex items-center justify-center md:justify-start gap-1"><MapPin size={16} /> {expert.location}</p>
                             </div>
                             <a href={`tel:${expert.phone}`} className="px-6 py-3 bg-green-100 text-green-700 font-bold rounded-xl hover:bg-green-200 transition-colors flex items-center gap-2">
-                                <Phone size={20} /> Call Now
+                                <Phone size={20} /> {t('call.now')}
                             </a>
                         </div>
                     ))}

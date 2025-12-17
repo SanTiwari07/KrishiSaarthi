@@ -197,7 +197,11 @@ def init_advisor():
             risk_level=data.get('risk_level', 'low'),
             time_availability=data.get('time_availability', 'full-time'),
             experience_years=int(data.get('experience_years', 0)),
-            language=data.get('language', 'english')
+            language=data.get('language', 'english'),
+            selling_preference=data.get('selling_preference'),
+            recovery_timeline=data.get('recovery_timeline'),
+            loss_tolerance=data.get('loss_tolerance'),
+            risk_preference=data.get('risk_preference')
         )
         
         # Create advisor instance
@@ -209,10 +213,14 @@ def init_advisor():
         
         # Store session
         advisor_sessions[session_id] = advisor
+
+        # Generate recommendations
+        recommendations = advisor.generate_recommendations()
         
         return jsonify({
             'success': True,
             'session_id': session_id,
+            'recommendations': recommendations,
             'message': 'Business advisor initialized successfully'
         })
     

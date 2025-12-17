@@ -161,8 +161,9 @@ export default function GreenCredit() {
         setSuccess(null);
 
         try {
+            const uniqueId = Date.now().toString();
             const projectType = activity === 'Other' ? customActivity : activity;
-            const offChainHash = `${desc}|${location}|${images.length} images`; // Mock hash
+            const offChainHash = `${desc}|${location}|${images.length} images|${uniqueId}`; // Added uniqueId for image linking
 
             const { txHash } = await createProject(
                 blockchainState.registryContract,
@@ -171,6 +172,16 @@ export default function GreenCredit() {
             );
 
             setSuccess(`Activity submitted! TX: ${txHash.substring(0, 10)}...`);
+
+            // Store images locally for demo linking
+            try {
+                const storedEvidence = JSON.parse(localStorage.getItem('demo_evidence_map') || '{}');
+                storedEvidence[uniqueId] = images;
+                localStorage.setItem('demo_evidence_map', JSON.stringify(storedEvidence));
+            } catch (e) {
+                console.error("Failed to store local evidence", e);
+            }
+
             setActivity('organic');
             setDesc('');
             setLocation('');
@@ -216,7 +227,7 @@ export default function GreenCredit() {
                 {!blockchainState ? (
                     <button onClick={handleConnectWallet} disabled={isConnecting} className="bg-primary text-white px-6 py-3 rounded-xl font-bold hover:bg-primary-dark transition-colors flex items-center gap-2 shadow-lg">
                         {isConnecting ? <Loader2 className="animate-spin" /> : <Wallet size={20} />}
-                        {isConnecting ? 'Connecting...' : 'Connect Wallet'}
+                        {isConnecting ? t('connecting') : t('connect.wallet')}
                     </button>
                 ) : (
                     <div className="bg-white dark:bg-gray-800 p-3 rounded-xl border border-yellow-200 dark:border-yellow-800/30 shadow-sm flex items-center gap-4">
@@ -243,8 +254,8 @@ export default function GreenCredit() {
                 <button
                     onClick={() => setActiveTab('apply')}
                     className={`flex-1 py-3 text-lg font-bold rounded-lg transition-all ${activeTab === 'apply'
-                            ? 'bg-white dark:bg-gray-600 text-primary shadow-md'
-                            : 'text-gray-500 hover:text-gray-700 dark:text-gray-400'
+                        ? 'bg-white dark:bg-gray-600 text-primary shadow-md'
+                        : 'text-gray-500 hover:text-gray-700 dark:text-gray-400'
                         }`}
                 >
                     {t('apply.credit') || 'Apply for Credit'}
@@ -252,8 +263,8 @@ export default function GreenCredit() {
                 <button
                     onClick={() => setActiveTab('list')}
                     className={`flex-1 py-3 text-lg font-bold rounded-lg transition-all ${activeTab === 'list'
-                            ? 'bg-white dark:bg-gray-600 text-primary shadow-md'
-                            : 'text-gray-500 hover:text-gray-700 dark:text-gray-400'
+                        ? 'bg-white dark:bg-gray-600 text-primary shadow-md'
+                        : 'text-gray-500 hover:text-gray-700 dark:text-gray-400'
                         }`}
                 >
                     {t('my.credits') || 'My Credits'}
@@ -264,23 +275,23 @@ export default function GreenCredit() {
             {activeTab === 'apply' && (
                 <form onSubmit={handleSubmit} className="bg-white dark:bg-gray-800 p-8 rounded-3xl shadow-md border border-gray-100 dark:border-gray-700 space-y-6 animate-fade-in">
                     <div>
-                        <label className="block text-lg font-bold text-gray-700 dark:text-gray-300 mb-2">Activity Type</label>
+                        <label className="block text-lg font-bold text-gray-700 dark:text-gray-300 mb-2">{t('activity.type.label')}</label>
                         <select
                             value={activity}
                             onChange={(e) => setActivity(e.target.value as ActivityType)}
                             className="w-full p-4 border border-gray-300 rounded-xl dark:bg-gray-700 dark:border-gray-600 bg-white dark:text-white focus:ring-2 focus:ring-primary focus:border-transparent text-lg"
                         >
-                            <option value="organic">Organic Farming</option>
-                            <option value="water">Water Conservation</option>
-                            <option value="tree">Tree Plantation</option>
-                            <option value="soil">Soil Conservation</option>
-                            <option value="Other">Other</option>
+                            <option value="organic">{t('act.organic')}</option>
+                            <option value="water">{t('act.water')}</option>
+                            <option value="tree">{t('act.tree')}</option>
+                            <option value="soil">{t('act.soil')}</option>
+                            <option value="Other">{t('act.other')}</option>
                         </select>
                     </div>
                     {activity === 'Other' && (
                         <input
                             type="text"
-                            placeholder="Specify activity"
+                            placeholder={t('specify.activity')}
                             value={customActivity}
                             onChange={e => setCustomActivity(e.target.value)}
                             className="w-full p-4 border border-gray-300 rounded-xl dark:bg-gray-700 dark:border-gray-600 bg-white dark:text-white focus:ring-2 focus:ring-primary focus:border-transparent text-lg"
@@ -293,12 +304,12 @@ export default function GreenCredit() {
                             value={desc}
                             onChange={(e) => setDesc(e.target.value)}
                             className="w-full p-4 border border-gray-300 rounded-xl dark:bg-gray-700 dark:border-gray-600 bg-white dark:text-white h-32 text-lg focus:ring-2 focus:ring-primary focus:border-transparent"
-                            placeholder="Describe your activity..."
+                            placeholder={t('describe.activity')}
                             required
                         ></textarea>
                     </div>
                     <div>
-                        <label className="block text-lg font-bold text-gray-700 dark:text-gray-300 mb-2">Location</label>
+                        <label className="block text-lg font-bold text-gray-700 dark:text-gray-300 mb-2">{t('location')}</label>
                         <div className="relative">
                             <MapPin className="absolute left-4 top-4 text-gray-400" size={24} />
                             <input
@@ -306,13 +317,13 @@ export default function GreenCredit() {
                                 value={location}
                                 onChange={(e) => setLocation(e.target.value)}
                                 className="w-full pl-12 p-4 border border-gray-300 rounded-xl dark:bg-gray-700 dark:border-gray-600 bg-white dark:text-white text-lg focus:ring-2 focus:ring-primary focus:border-transparent"
-                                placeholder="Enter farm location"
+                                placeholder={t('enter.location')}
                                 required
                             />
                         </div>
                     </div>
                     <div>
-                        <label className="block text-lg font-bold text-gray-700 dark:text-gray-300 mb-2">Evidence</label>
+                        <label className="block text-lg font-bold text-gray-700 dark:text-gray-300 mb-2">{t('evidence')}</label>
 
                         {images.length > 0 && (
                             <div className="grid grid-cols-3 gap-3 mb-4">
@@ -328,12 +339,12 @@ export default function GreenCredit() {
                             className="border-3 border-dashed border-gray-300 dark:border-gray-600 rounded-2xl p-10 text-center cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors relative"
                         >
                             <Upload className="mx-auto mb-4 text-gray-400" size={40} />
-                            <span className="text-lg font-medium text-gray-500">Tap to upload proof</span>
+                            <span className="text-lg font-medium text-gray-500">{t('tap.upload.proof')}</span>
                             <input type="file" multiple accept="image/*" onChange={handleImageUpload} className="absolute inset-0 opacity-0 cursor-pointer" />
                         </div>
                     </div>
                     <button type="submit" disabled={isLoading} className="w-full bg-primary text-white py-4 rounded-xl font-bold text-xl hover:bg-primary-dark transition-all shadow-lg transform hover:-translate-y-0.5 disabled:opacity-50">
-                        {isLoading ? 'Submitting...' : t('submit') || 'Submit Application'}
+                        {isLoading ? t('submitting') : t('submit.application')}
                     </button>
                 </form>
             )}
@@ -344,11 +355,11 @@ export default function GreenCredit() {
                     {!blockchainState ? (
                         <div className="text-center p-16 bg-white dark:bg-gray-800 rounded-3xl border border-gray-200 dark:border-gray-700">
                             <Wallet className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                            <p className="text-gray-500 text-xl font-bold">Connect wallet to view credits</p>
+                            <p className="text-gray-500 text-xl font-bold">{t('connect.view.credits')}</p>
                         </div>
                     ) : activities.length === 0 ? (
                         <div className="text-center p-10 bg-white dark:bg-gray-800 rounded-3xl">
-                            <p className="text-gray-500 text-lg">No credits found.</p>
+                            <p className="text-gray-500 text-lg">{t('no.credits')}</p>
                         </div>
                     ) : (
                         activities.map((credit) => (

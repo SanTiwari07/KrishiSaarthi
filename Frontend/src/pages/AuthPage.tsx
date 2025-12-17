@@ -34,7 +34,7 @@ export default function AuthPage({ type }: { type: 'login' | 'signup' }) {
         try {
             if (type === 'login') {
                 await login(phone, password);
-                toast.success('Logged in successfully!');
+                toast.success(t('auth.success.login'));
                 // Redirect logic is handled by the useEffect for auth state change ideally,
                 // but direct navigation is fine for now as user state updates.
                 // However, we need to know the Role. 
@@ -62,7 +62,7 @@ export default function AuthPage({ type }: { type: 'login' | 'signup' }) {
                     createdAt: new Date().toISOString()
                 };
                 await signup(userData, password);
-                toast.success('Account created successfully!');
+                toast.success(t('auth.success.signup'));
                 if (role === 'farmer') navigate('/farmer-dashboard');
                 else if (role === 'validator') navigate('/validator-dashboard');
                 else navigate('/buyer-dashboard');
@@ -70,10 +70,10 @@ export default function AuthPage({ type }: { type: 'login' | 'signup' }) {
         } catch (error: any) {
             console.error(error);
             // Firebase Error codes mapping could be added here
-            let msg = 'Authentication failed';
-            if (error.code === 'auth/user-not-found') msg = 'User not found';
-            if (error.code === 'auth/wrong-password') msg = 'Incorrect password';
-            if (error.code === 'auth/email-already-in-use') msg = 'User already exists';
+            let msg = t('auth.error.failed');
+            if (error.code === 'auth/user-not-found') msg = t('auth.error.user_not_found');
+            if (error.code === 'auth/wrong-password') msg = t('auth.error.wrong_password');
+            if (error.code === 'auth/email-already-in-use') msg = t('auth.error.email_in_use');
             toast.error(msg);
         } finally {
             setLoading(false);
@@ -84,17 +84,18 @@ export default function AuthPage({ type }: { type: 'login' | 'signup' }) {
         <div className="min-h-screen flex bg-white dark:bg-gray-900 font-sans">
 
             {/* Left Side - Image/Branding (Hidden on mobile) */}
-            <div className="hidden lg:flex w-1/2 bg-primary relative overflow-hidden items-center justify-center p-12">
-                <div className="absolute inset-0 bg-gradient-to-br from-green-600 to-green-900 opacity-90"></div>
+            {/* Left Side - Image/Branding (Hidden on mobile) */}
+            <div className="hidden lg:flex w-1/2 bg-green-50 dark:bg-gray-900 relative overflow-hidden items-center justify-center p-12 transition-colors duration-300">
+                <div className="absolute inset-0 bg-gradient-to-br from-green-50 to-emerald-100 dark:from-gray-900 dark:to-gray-800 opacity-90 transition-colors duration-300"></div>
                 {/* Decorative Circles */}
-                <div className="absolute top-0 left-0 w-64 h-64 bg-white opacity-10 rounded-full -translate-x-1/2 -translate-y-1/2 blur-3xl"></div>
-                <div className="absolute bottom-0 right-0 w-96 h-96 bg-yellow-400 opacity-20 rounded-full translate-x-1/2 translate-y-1/2 blur-3xl"></div>
+                <div className="absolute top-0 left-0 w-64 h-64 bg-green-200 dark:bg-green-500/10 opacity-20 rounded-full -translate-x-1/2 -translate-y-1/2 blur-3xl"></div>
+                <div className="absolute bottom-0 right-0 w-96 h-96 bg-yellow-200 dark:bg-blue-500/10 opacity-30 rounded-full translate-x-1/2 translate-y-1/2 blur-3xl"></div>
 
-                <div className="relative z-10 text-white max-w-lg text-center">
+                <div className="relative z-10 text-center max-w-lg">
                     <img src={logo} alt="KrishiSaarthi Logo" className="w-[36rem] h-auto mx-auto mb-8 drop-shadow-lg" />
-                    <h1 className="text-5xl font-extrabold mb-6">Welcome to KrishiSaarthi</h1>
-                    <p className="text-xl text-green-100 leading-relaxed mb-8">
-                        Join the revolution in sustainable agriculture. Connect, grow, and earn with advanced technology.
+                    <h1 className="text-5xl font-extrabold mb-6 text-green-900 dark:text-white transition-colors duration-300">{t('welcome.to')}</h1>
+                    <p className="text-xl text-green-800 dark:text-gray-300 leading-relaxed mb-8 transition-colors duration-300">
+                        {t('join.revolution')}
                     </p>
                 </div>
             </div>
@@ -113,7 +114,7 @@ export default function AuthPage({ type }: { type: 'login' | 'signup' }) {
                             {type === 'login' ? t('login') : t('create.account')}
                         </h2>
                         <p className="text-gray-500 dark:text-gray-400 text-lg">
-                            {type === 'login' ? 'Sign in to continue' : 'Start your journey today'}
+                            {type === 'login' ? t('sign.in.continue') : t('start.journey')}
                         </p>
                     </div>
 
@@ -141,7 +142,7 @@ export default function AuthPage({ type }: { type: 'login' | 'signup' }) {
                                         type="text"
                                         required
                                         className="appearance-none rounded-xl relative block w-full px-4 py-4 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 placeholder-gray-400 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-lg transition-shadow"
-                                        placeholder="Enter full name"
+                                        placeholder={t('enter.full.name')}
                                         value={name}
                                         onChange={(e) => setName(e.target.value)}
                                     />
@@ -158,7 +159,7 @@ export default function AuthPage({ type }: { type: 'login' | 'signup' }) {
                                         type="tel"
                                         required
                                         className="appearance-none rounded-xl relative block w-full pl-12 pr-4 py-4 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 placeholder-gray-400 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-lg transition-shadow"
-                                        placeholder="Enter mobile number"
+                                        placeholder={t('enter.mobile')}
                                         value={phone}
                                         onChange={(e) => setPhone(e.target.value)}
                                     />
@@ -168,7 +169,7 @@ export default function AuthPage({ type }: { type: 'login' | 'signup' }) {
                             {type === 'signup' && (
                                 <>
                                     <div>
-                                        <label htmlFor="age" className="block text-base font-semibold text-gray-700 dark:text-gray-300 mb-2">Age</label>
+                                        <label htmlFor="age" className="block text-base font-semibold text-gray-700 dark:text-gray-300 mb-2">{t('age')}</label>
                                         <div className="relative">
                                             <Calendar className="absolute top-4 left-4 text-gray-400" size={20} />
                                             <input
@@ -177,14 +178,14 @@ export default function AuthPage({ type }: { type: 'login' | 'signup' }) {
                                                 type="number"
                                                 required
                                                 className="appearance-none rounded-xl relative block w-full pl-12 pr-4 py-4 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 placeholder-gray-400 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-lg transition-shadow"
-                                                placeholder="Enter age"
+                                                placeholder={t('enter.age')}
                                                 value={age}
                                                 onChange={(e) => setAge(e.target.value)}
                                             />
                                         </div>
                                     </div>
                                     <div>
-                                        <label htmlFor="address" className="block text-base font-semibold text-gray-700 dark:text-gray-300 mb-2">Address</label>
+                                        <label htmlFor="address" className="block text-base font-semibold text-gray-700 dark:text-gray-300 mb-2">{t('address')}</label>
                                         <div className="relative">
                                             <MapPin className="absolute top-4 left-4 text-gray-400" size={20} />
                                             <input
@@ -193,7 +194,7 @@ export default function AuthPage({ type }: { type: 'login' | 'signup' }) {
                                                 type="text"
                                                 required
                                                 className="appearance-none rounded-xl relative block w-full pl-12 pr-4 py-4 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 placeholder-gray-400 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-lg transition-shadow"
-                                                placeholder="Enter address"
+                                                placeholder={t('enter.address')}
                                                 value={address}
                                                 onChange={(e) => setAddress(e.target.value)}
                                             />
@@ -210,7 +211,7 @@ export default function AuthPage({ type }: { type: 'login' | 'signup' }) {
                                     type="password"
                                     required
                                     className="appearance-none rounded-xl relative block w-full px-4 py-4 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 placeholder-gray-400 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-lg transition-shadow"
-                                    placeholder="Enter password"
+                                    placeholder={t('enter.password')}
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
                                 />
@@ -229,9 +230,9 @@ export default function AuthPage({ type }: { type: 'login' | 'signup' }) {
 
                         <div className="text-center text-gray-500">
                             {type === 'login' ? (
-                                <p>Don't have an account? <Link to="/signup" className="text-primary font-bold hover:underline">{t('signup')}</Link></p>
+                                <p>{t('dont.have.account')} <Link to="/signup" className="text-primary font-bold hover:underline">{t('signup')}</Link></p>
                             ) : (
-                                <p>Already have an account? <Link to="/login" className="text-primary font-bold hover:underline">{t('login')}</Link></p>
+                                <p>{t('already.have.account')} <Link to="/login" className="text-primary font-bold hover:underline">{t('login')}</Link></p>
                             )}
                         </div>
                     </form>
@@ -246,7 +247,7 @@ const RoleCard = ({ r, role, setRole, icon: Icon, label }: any) => (
         onClick={() => setRole(r)}
         className={`cursor-pointer border-2 rounded-2xl p-4 flex flex-col items-center justify-center space-y-3 transition-all transform duration-200 ${role === r
             ? 'border-primary bg-green-50 dark:bg-green-900/30 text-primary scale-105 shadow-md'
-            : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800'
+            : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-500 dark:text-gray-300'
             }`}
     >
         <Icon size={32} strokeWidth={1.5} />

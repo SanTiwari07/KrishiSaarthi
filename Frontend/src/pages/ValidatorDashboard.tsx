@@ -49,21 +49,53 @@ export default function ValidatorDashboard() {
         try {
             const projects = await getAllProjects(blockchainState.registryContract);
 
+            const dismissedIds = JSON.parse(localStorage.getItem('dismissed_projects') || '[]');
+
             const mappedCredits: Credit[] = projects
-                .filter(p => p.status === 'Pending')
+                .filter(p => p.status === 'Pending' && !dismissedIds.includes(p.id))
                 .map(p => {
                     const parts = p.offChainHash.split('|');
                     const description = parts[0] || 'No description';
                     const location = parts[1] || 'Unknown Location';
+                    const uniqueId = parts[3];
+
+                    let realDate = new Date().toLocaleDateString('en-CA');
+                    let evidenceImages: string[] = [];
+
+                    if (uniqueId) {
+                        // 1. Recover Date
+                        const timestamp = parseInt(uniqueId);
+                        if (!isNaN(timestamp)) {
+                            realDate = new Date(timestamp).toLocaleDateString('en-CA');
+                        }
+
+                        // 2. Recover Evidence
+                        try {
+                            const map = JSON.parse(localStorage.getItem('demo_evidence_map') || '{}');
+                            if (map[uniqueId]) {
+                                evidenceImages = map[uniqueId];
+                            }
+                        } catch (e) {
+                            console.error("Error reading evidence map", e);
+                        }
+                    } else {
+                        // Fallback for legacy (no uniqueId): Randomize date based on ID to avoid "all today"
+                        // e.g. (id % 5) days ago
+                        const daysAgo = (p.id % 5) + 1;
+                        const d = new Date();
+                        d.setDate(d.getDate() - daysAgo);
+                        realDate = d.toLocaleDateString('en-CA');
+                    }
+
                     return {
                         id: p.id,
                         farmerName: `${p.farmer.substring(0, 6)}...${p.farmer.substring(38)}`,
                         farmerAddress: p.farmer,
-                        submissionDate: new Date().toISOString().split('T')[0],
+                        submissionDate: realDate,
                         activityType: p.projectType,
                         location: location,
                         description: description,
-                        evidence: [],
+                        evidence: evidenceImages,
                         creditAmount: 0,
                         status: 'pending'
                     };
@@ -86,7 +118,15 @@ export default function ValidatorDashboard() {
         if (!selectedCredit || !blockchainState?.registryContract) return;
 
         if (!approved) {
-            // Local rejection (hide from list)
+            // Local rejection + Persist to localStorage
+            try {
+                const dismissed = JSON.parse(localStorage.getItem('dismissed_projects') || '[]');
+                dismissed.push(selectedCredit.id);
+                localStorage.setItem('dismissed_projects', JSON.stringify(dismissed));
+            } catch (e) {
+                console.error("Failed to persist rejection", e);
+            }
+
             setCredits(prev => prev.filter(c => c.id !== selectedCredit.id));
             setSelectedCredit(null);
             return;
@@ -99,7 +139,7 @@ export default function ValidatorDashboard() {
                 selectedCredit.id,
                 mintAmount
             );
-            alert(`Project verified and ${mintAmount} credits minted successfully!`);
+            alert(`${t('success.verified')} ${mintAmount} credits minted!`);
 
             // Auto-list for Buyer Dashboard (Demo Bridge for Real Projects)
             // This ensures immediate visibility as requested by user
@@ -141,7 +181,7 @@ export default function ValidatorDashboard() {
         setIsAdminProcessing(true);
         try {
             await addVerifier(blockchainState.registryContract, newValidatorAddress);
-            alert(`Validator ${newValidatorAddress} added successfully!`);
+            alert(`${t('success.validator.added')} (${newValidatorAddress})`);
             setNewValidatorAddress('');
         } catch (err: any) {
             console.error("Add validator failed", err);
@@ -158,9 +198,9 @@ export default function ValidatorDashboard() {
                     <Wallet size={64} className="text-yellow-600 dark:text-yellow-400" />
                 </div>
                 <div className="text-center max-w-lg">
-                    <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-3">{t('validatorPortal') || 'Validator Portal'}</h1>
+                    <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-3">{t('validator.title')}</h1>
                     <p className="text-lg text-gray-600 dark:text-gray-400 mb-8">
-                        Connect your wallet to access the validator dashboard and verify green credit requests.
+                        {t('validator.connect.desc')}
                     </p>
                     <button
                         onClick={connectWallet}
@@ -180,7 +220,7 @@ export default function ValidatorDashboard() {
             <div className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
                     <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('dashboard')}</h1>
-                    <p className="text-gray-500">{t('validatorPortal') || 'Validate farmer activities to create green credits'}</p>
+                    <p className="text-gray-500">{t('validator.desc')}</p>
                 </div>
 
                 {blockchainState.isAdmin && (
@@ -194,7 +234,7 @@ export default function ValidatorDashboard() {
                         >
                             <div className="flex items-center gap-2">
                                 <FileText size={16} />
-                                Pending Requests
+                                {t('pendingRequests')}
                             </div>
                         </button>
                         <button
@@ -206,7 +246,7 @@ export default function ValidatorDashboard() {
                         >
                             <div className="flex items-center gap-2">
                                 <Shield size={16} />
-                                Admin Panel
+                                {t('admin.panel')}
                             </div>
                         </button>
                     </div>
@@ -219,14 +259,14 @@ export default function ValidatorDashboard() {
                         <div className="bg-blue-50 dark:bg-blue-900/20 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
                             <Shield className="w-8 h-8 text-blue-600 dark:text-blue-400" />
                         </div>
-                        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Admin Panel</h2>
-                        <p className="text-gray-500 mt-2">Add new validators to the network. Only the contract owner can perform this action.</p>
+                        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{t('admin.panel')}</h2>
+                        <p className="text-gray-500 mt-2">{t('admin.desc')}</p>
                     </div>
 
                     <div className="space-y-6">
                         <div>
                             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                New Validator Address
+                                {t('new.validator.address')}
                             </label>
                             <div className="relative">
                                 <input
@@ -239,7 +279,7 @@ export default function ValidatorDashboard() {
                                 <Wallet className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
                             </div>
                             <p className="text-xs text-gray-400 mt-2 ml-1">
-                                Enter the wallet address of the user you want to authorize as a validator.
+                                {t('enter.wallet.desc')}
                             </p>
                         </div>
 
@@ -249,7 +289,7 @@ export default function ValidatorDashboard() {
                             className="w-full flex items-center justify-center gap-2 py-4 bg-primary text-white rounded-xl hover:bg-primary-dark transition-all shadow-lg hover:shadow-green-500/30 font-bold disabled:opacity-50 disabled:cursor-not-allowed transform hover:-translate-y-0.5 active:translate-y-0"
                         >
                             {isAdminProcessing ? <Loader2 className="animate-spin" /> : <UserPlus size={20} />}
-                            {isAdminProcessing ? 'Adding Validator...' : 'Add Validator'}
+                            {isAdminProcessing ? t('adding') : t('add.validator')}
                         </button>
                     </div>
                 </div>

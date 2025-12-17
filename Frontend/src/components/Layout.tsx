@@ -82,7 +82,7 @@ export default function Layout({ children }: { children?: React.ReactNode }) {
           <div className="flex justify-between h-20">
             <div className="flex items-center">
               <Link to={getHomeLink()} className="flex items-center space-x-3 group">
-                <div className="h-10 w-auto flex items-center justify-center">
+                <div className="h-16 w-auto flex items-center justify-center">
                   <img src={logo} alt="KrishiSaarthi Logo" className="h-full w-auto object-contain" />
                 </div>
                 <span className="font-bold text-2xl bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-300 tracking-tight">
@@ -94,7 +94,7 @@ export default function Layout({ children }: { children?: React.ReactNode }) {
             {/* Desktop Controls */}
             <div className="hidden md:flex items-center space-x-6">
               {!isAuthenticated && (
-                <a href="/#features" onClick={scrollToFeatures} className="text-gray-700 dark:text-gray-200 hover:text-primary text-base font-semibold transition-colors cursor-pointer">{t('features') || 'features'}</a>
+                <a href="/#features" onClick={scrollToFeatures} className="text-gray-700 dark:text-gray-200 hover:text-primary text-base font-semibold transition-colors cursor-pointer">{t('features')}</a>
               )}
 
               {/* Language Toggle */}
@@ -117,17 +117,17 @@ export default function Layout({ children }: { children?: React.ReactNode }) {
               <div className="flex items-center space-x-1">
                 {isAuthenticated && user?.role === 'validator' && (
                   <Link to="/validator-dashboard" className="px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 hover:text-primary transition-colors">
-                    {t('validator') || 'Validator'}
+                    {t('role.validator')}
                   </Link>
                 )}
                 {isAuthenticated && user?.role === 'buyer' && (
                   <Link to="/buyer-dashboard" className="px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 hover:text-primary transition-colors">
-                    {t('buyer') || 'Buyer'}
+                    {t('role.buyer')}
                   </Link>
                 )}
                 {isAuthenticated && user?.role === 'farmer' && (
                   <Link to="/farmer-dashboard" className="px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 hover:text-primary transition-colors">
-                    {t('farmer') || 'Farmer'}
+                    {t('role.farmer')}
                   </Link>
                 )}
               </div>
@@ -140,7 +140,7 @@ export default function Layout({ children }: { children?: React.ReactNode }) {
                   className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-orange-50 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400 font-bold text-sm hover:bg-orange-100 dark:hover:bg-orange-900/40 transition-colors border border-orange-200 dark:border-orange-800"
                 >
                   {isWalletConnecting ? <Loader2 size={16} className="animate-spin" /> : <Wallet size={16} />}
-                  <span>Connect</span>
+                  <span>{t('connect')}</span>
                 </button>
               ) : (
                 <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800">
@@ -228,7 +228,7 @@ export default function Layout({ children }: { children?: React.ReactNode }) {
             <div className="md:hidden bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl border-t border-gray-200 dark:border-gray-700 pb-4 shadow-xl absolute w-full z-50">
               <div className="px-4 pt-4 pb-3 space-y-2">
                 <div className="flex justify-between items-center mb-4">
-                  <span className="text-gray-500 dark:text-gray-400 text-base font-medium">{t('settings') || 'Settings'}</span>
+                  <span className="text-gray-500 dark:text-gray-400 text-base font-medium">{t('settings')}</span>
                   <div className="flex space-x-4">
                     <button onClick={toggleTheme} className="text-gray-700 dark:text-gray-200 bg-gray-100 dark:bg-gray-700 p-2 rounded-lg">
                       {isDark ? <Sun size={24} /> : <Moon size={24} />}
