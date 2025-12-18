@@ -12,6 +12,7 @@ import photo5 from '../assets/zero-mile/photo5.jpeg';
 import photo6 from '../assets/zero-mile/photo6.jpeg';
 import photo7 from '../assets/zero-mile/photo7.jpeg';
 import photo8 from '../assets/zero-mile/photo8.jpeg';
+import InfiniteCarousel from '../components/InfiniteCarousel';
 
 export default function Landing() {
     const { t } = useApp();
@@ -93,7 +94,7 @@ export default function Landing() {
                                 {t('app.tagline')}
                             </div>
                             <h1 className="text-5xl md:text-7xl font-extrabold text-gray-900 dark:text-white mb-8 leading-tight tracking-tight drop-shadow-sm">
-                                {t('hero.empowering')} <span className="text-primary">{t('hero.ai_blockchain')}</span>
+                                {t('hero.empowering')} <span className="text-primary">{t('hero.ai_blockchain')}</span>{t('hero.suffix')}
                             </h1>
                             <p className="text-xl md:text-2xl text-gray-600 dark:text-gray-300 mb-10 leading-relaxed max-w-xl">
                                 {t('hero.desc')}
@@ -246,16 +247,8 @@ export default function Landing() {
                         {t('validation.zero_mile')}
                     </h2>
 
-                    <div className="flex gap-6 overflow-x-auto pb-8 scrollbar-hide snap-x snap-mandatory -mx-4 px-4 md:mx-0 md:px-0">
-                        {zeroMilePhotos.map((photo, idx) => (
-                            <div key={idx} className="h-[300px] md:h-[400px] flex-shrink-0 snap-center rounded-2xl overflow-hidden shadow-lg hover:scale-[1.02] transition-transform duration-300 relative group">
-                                <img
-                                    src={photo}
-                                    alt={`Zero Mile Initiative ${idx + 1}`}
-                                    className="h-full w-auto max-w-none object-contain"
-                                />
-                            </div>
-                        ))}
+                    <div className="mt-8">
+                        <InfiniteCarousel images={zeroMilePhotos} />
                     </div>
                 </div>
             </section>

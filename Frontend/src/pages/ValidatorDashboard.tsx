@@ -9,6 +9,8 @@ import {
 import { useBlockchain } from '../contexts/BlockchainContext';
 import { useApp } from '../contexts/AppContext';
 import { CheckCircle, XCircle, MapPin, FileText, Wallet, Loader2, RefreshCw, Shield, UserPlus } from 'lucide-react';
+import { db } from '../firebase';
+import { doc, getDoc } from 'firebase/firestore';
 
 // ... (existing simplified mock data)
 
@@ -51,9 +53,9 @@ export default function ValidatorDashboard() {
 
             const dismissedIds = JSON.parse(localStorage.getItem('dismissed_projects') || '[]');
 
-            const mappedCredits: Credit[] = projects
+            const mappedCredits = await Promise.all(projects
                 .filter(p => p.status === 'Pending' && !dismissedIds.includes(p.id))
-                .map(p => {
+                .map(async p => {
                     const parts = p.offChainHash.split('|');
                     const description = parts[0] || 'No description';
                     const location = parts[1] || 'Unknown Location';
@@ -69,18 +71,18 @@ export default function ValidatorDashboard() {
                             realDate = new Date(timestamp).toLocaleDateString('en-CA');
                         }
 
-                        // 2. Recover Evidence
+                        // 2. Recover Evidence from Firestore
                         try {
-                            const map = JSON.parse(localStorage.getItem('demo_evidence_map') || '{}');
-                            if (map[uniqueId]) {
-                                evidenceImages = map[uniqueId];
+                            const docRef = doc(db, 'projects_evidence', uniqueId);
+                            const docSnap = await getDoc(docRef);
+                            if (docSnap.exists()) {
+                                evidenceImages = docSnap.data().images || [];
                             }
                         } catch (e) {
-                            console.error("Error reading evidence map", e);
+                            console.error("Error fetching evidence", e);
                         }
                     } else {
                         // Fallback for legacy (no uniqueId): Randomize date based on ID to avoid "all today"
-                        // e.g. (id % 5) days ago
                         const daysAgo = (p.id % 5) + 1;
                         const d = new Date();
                         d.setDate(d.getDate() - daysAgo);
@@ -97,9 +99,9 @@ export default function ValidatorDashboard() {
                         description: description,
                         evidence: evidenceImages,
                         creditAmount: 0,
-                        status: 'pending'
+                        status: 'pending' as const
                     };
-                });
+                }));
             setCredits(mappedCredits);
         } catch (err) {
             console.error("Failed to load projects", err);

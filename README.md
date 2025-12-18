@@ -1,8 +1,15 @@
-# KrishiSaarthi (कृषीसारथी) - Empowering Agriculture with AI & Blockchain
+<div align="center">
+
+# KrishiSaarthi (कृषीसारथी)
+### Empowering Agriculture with AI & Blockchain
+
+![KrishiSaarthi Logo](./Logo/KrishiSaarthi%20Logo.png)
+
+[![Live Demo](https://img.shields.io/badge/Live-Demo-brightgreen?style=for-the-badge&logo=firebase)](https://krishisaarthi-59c47.web.app)
 
 KrishiSaarthi is a next-generation "Phygital" (Physical + Digital) platform designed to revolutionize Indian agriculture. It combines cutting-edge AI for disease detection and business advisory with a blockchain-based Green Credit Marketplace to empower farmers, ensure transparency, and promote sustainable practices.
 
-![Project Logo](./Logo/KrishiSaarthi%20Logo.png)
+</div>
 
 ---
 
@@ -32,7 +39,23 @@ KrishiSaarthi is a next-generation "Phygital" (Physical + Digital) platform desi
 
 ---
 
-## 🛠️ Technology Stack
+## � Validation Phase Zero: Ground Research
+**"Building with the User, not just for them."**
+
+We conducted extensive on-ground research to validate the problem statement. Our team visited local farms, markets, and rural communities to:
+- **Meet Farmers**: We interacted directly with farmers to understand their daily pain points and needs.
+- **Analyze Real Businesses**: We observed existing agricultural businesses to identify gaps in the supply chain and credit systems.
+- **Validate Problems**: This "Phase Zero" confirmed the necessity for a tech-enabled, trust-based solution like KrishiSaarthi.
+
+### 📸 Research Gallery
+| | | | |
+|:---:|:---:|:---:|:---:|
+| ![Photo 1](Frontend/src/assets/zero-mile/photo1.jpeg) | ![Photo 2](Frontend/src/assets/zero-mile/photo2.jpeg) | ![Photo 3](Frontend/src/assets/zero-mile/photo3.jpeg) | ![Photo 4](Frontend/src/assets/zero-mile/photo4.jpeg) |
+| ![Photo 5](Frontend/src/assets/zero-mile/photo5.jpeg) | ![Photo 6](Frontend/src/assets/zero-mile/photo6.jpeg) | ![Photo 7](Frontend/src/assets/zero-mile/photo7.jpeg) | ![Photo 8](Frontend/src/assets/zero-mile/photo8.jpeg) |
+
+---
+
+## �🛠️ Technology Stack
 
 | Layer | Technologies |
 |-------|--------------|
@@ -116,6 +139,12 @@ Start the application (ensure your AI models are downloaded/linked properly).
 
 ---
 
+## 👥 Team
+Our dedicated team working to bridge the gap between technology and agriculture:
+- **Kanishka Salgude**
+- **Srujan Satav**
+- **Sanskar Tiwari**
+
 ## 🤝 Contributing
 We welcome contributions! Please fork the repo, create a feature branch, and submit a PR.
 
@@ -123,4 +152,8 @@ We welcome contributions! Please fork the repo, create a feature branch, and sub
 This project is licensed under the MIT License.
 
 ---
+<div align="center">
+
 *Built with ❤️ for Indian Farmers*
+
+</div>

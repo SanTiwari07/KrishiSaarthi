@@ -42,19 +42,19 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 const translations: Record<string, Record<Language, string>> = {
   // Landing Page
   'app.name': { en: 'KrishiSaarthi', hi: 'कृषिसारथी', mr: 'कृषिसारथी' },
-  'app.tagline': { en: 'Your Digital Farming Partner', hi: 'आपका डिजिटल खेती साथी', mr: 'तुमचा डिजिटल शेती साथी' },
+  'app.tagline': { en: 'Your Digital Farming Partner', hi: 'आपका डिजिटल खेती साथी', mr: 'तुमचा डिजिटल शेती जोडीदार' },
   'get.started': { en: 'Get Started', hi: 'शुरू करें', mr: 'सुरू करा' },
 
   // Role Selection
   'select.role': { en: 'Select Your Role', hi: 'अपनी भूमिका चुनें', mr: 'तुमची भूमिका निवडा' },
   'role.farmer': { en: 'Farmer', hi: 'किसान', mr: 'शेतकरी' },
-  'role.farmer.desc': { en: 'Access farming tools & earn green credits', hi: 'खेती के उपकरण और हरित क्रेडिट पाएं', mr: 'शेती साधने आणि हरित क्रेडिट मिळवा' },
-  'role.validator': { en: 'Validator', hi: 'सत्यापनकर्ता', mr: 'सत्यापनकर्ता' },
-  'role.validator.desc': { en: 'Verify farmer activities & approve credits', hi: 'किसान गतिविधियों को सत्यापित करें', mr: 'शेतकरी क्रियाकलाप सत्यापित करा' },
+  'role.farmer.desc': { en: 'Access farming tools & earn green credits', hi: 'खेती के आधुनिक साधन और ग्रीन क्रेडिट्स पाएं', mr: 'शेतीची आधुनिक साधने आणि ग्रीन क्रेडिट्स मिळवा' },
+  'role.validator': { en: 'Validator', hi: 'सत्यापनकर्ता', mr: 'पडताळणीकर्ता' },
+  'role.validator.desc': { en: 'Verify farmer activities & approve credits', hi: 'किसानों के कार्यों का सत्यापन करें और क्रेडिट स्वीकृत करें', mr: 'शेतकऱ्यांच्या कामांची पडताळणी करा आणि क्रेडिट मंजूर करा' },
   'role.buyer': { en: 'Buyer', hi: 'खरीदार', mr: 'खरेदीदार' },
-  'role.buyer.desc': { en: 'Purchase verified green credits', hi: 'सत्यापित हरित क्रेडिट खरीदें', mr: 'सत्यापित हरित क्रेडिट खरेदी करा' },
+  'role.buyer.desc': { en: 'Purchase verified green credits', hi: 'सत्यापित ग्रीन क्रेडिट्स खरीदें', mr: 'सत्यापित ग्रीन क्रेडिट्स खरेदी करा' },
   'login': { en: 'Login', hi: 'लॉगिन', mr: 'लॉगिन' },
-  'signup': { en: 'Sign Up', hi: 'साइन अप करें', mr: 'साइन अप करा' },
+  'signup': { en: 'Sign Up', hi: 'साइन अप', mr: 'साइन अप' },
 
   // Farmer Signup
   'create.account': { en: 'Create Account', hi: 'खाता बनाएं', mr: 'खाते तयार करा' },
@@ -150,8 +150,9 @@ const translations: Record<string, Record<Language, string>> = {
   'business': { en: 'Business', hi: 'व्यापार', mr: 'व्यवसाय' },
   'settings': { en: 'Settings', hi: 'सेटिंग्स', mr: 'सेटिंग्ज' },
   'connect': { en: 'Connect', hi: 'कनेक्ट', mr: 'कनेक्ट' },
-  'hero.empowering': { en: 'Empowering Farmers with', hi: 'किसानों को सशक्त बनाना', mr: 'शेतकऱ्यांना सक्षम करणे' },
+  'hero.empowering': { en: 'Empowering Farmers with', hi: 'किसानों को', mr: '' },
   'hero.ai_blockchain': { en: 'AI & Blockchain', hi: 'एआई और ब्लॉकचेन', mr: 'एआय आणि ब्लॉकचेन' },
+  'hero.suffix': { en: '', hi: ' के माध्यम से सशक्त बनाना', mr: 'च्या माध्यमातून शेतकऱ्यांना सक्षम बनवणे' },
   'hero.desc': { en: 'One-stop solution for early crop disease detection, smart business advice, and earning green credits.', hi: 'फसल रोग का पता लगाने, स्मार्ट व्यापार सलाह और हरित क्रेडिट अर्जित करने का एक व्यापक समाधान।', mr: 'पीक रोग निदान, स्मार्ट व्यवसाय सल्ला आणि हरित क्रेडिट मिळवण्यासाठी एकच उपाय.' },
   'overview': { en: 'Overview', hi: 'अवलोकन', mr: 'विहंगावलोकन' },
   'analysis': { en: 'Analysis', hi: 'विश्लेषण', mr: 'विश्लेषण' },
@@ -401,7 +402,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   const t = (key: string): string => {
-    return translations[key]?.[language] || key;
+    return translations[key]?.[language] ?? key;
   };
 
   // Auth Logic

@@ -13,6 +13,8 @@ import {
     setupChainListener,
     type BlockchainState,
 } from '../services/blockchain';
+import { db } from '../firebase';
+import { doc, setDoc } from 'firebase/firestore';
 
 type View = 'apply' | 'list';
 type ActivityType = 'organic' | 'water' | 'tree' | 'renewable' | 'chemical-free' | 'soil' | 'Other';
@@ -174,12 +176,15 @@ export default function GreenCredit() {
             setSuccess(`Activity submitted! TX: ${txHash.substring(0, 10)}...`);
 
             // Store images locally for demo linking
+            // Store images in Firestore for global access (Demo)
             try {
-                const storedEvidence = JSON.parse(localStorage.getItem('demo_evidence_map') || '{}');
-                storedEvidence[uniqueId] = images;
-                localStorage.setItem('demo_evidence_map', JSON.stringify(storedEvidence));
+                // Import these at the top if not present, but for now assuming we will add imports
+                await setDoc(doc(db, 'projects_evidence', uniqueId), {
+                    images: images,
+                    timestamp: Date.now()
+                });
             } catch (e) {
-                console.error("Failed to store local evidence", e);
+                console.error("Failed to store evidence in Firestore", e);
             }
 
             setActivity('organic');
