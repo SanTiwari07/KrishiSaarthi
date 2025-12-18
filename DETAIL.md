@@ -278,3 +278,166 @@ By working on this project, developers gain skills in:
 
 ---
 *This document serves as the internal truth for the KrishiSaarthi project.*
+
+---
+
+## 1️⃣6️⃣ TECHNICAL DEEP DIVE (Q&A)
+
+### Q1: How are languages translated?
+**Answer:**
+The translation system is built using a **custom React Context approach** rather than an external library like `i18next` to keep the app lightweight.
+1.  **Storage:** All translation strings are stored in a static dictionary object `translations` within `Frontend/src/contexts/AppContext.tsx`. Each key (e.g., `'app.name'`) maps to an object containing values for `'en'`, `'hi'`, and `'mr'`.
+2.  **State Management:** The current language (`'en' | 'hi' | 'mr'`) is stored in the `AppContext` state.
+3.  **Consumption:** Components consume this via a helper function `t(key)`. When `t('welcome')` is called, it checks `translations['welcome'][currentLanguage]`. If a translation is missing, it falls back to the English key.
+4.  **Updates:** Changing the language in the Settings or Profile page updates the global context state, causing all components using `t()` to re-render instantly with the new text.
+
+### Q2: How is the Business Advisor working?
+**Answer:**
+The Business Advisor operates using a **Hybrid Intelligence Model**:
+1.  **Rule-Based Logic (Frontend):** For instant feedback, the `businessData.ts` file contains pre-defined metrics (Investment, Profit, ROI) for 15+ business types. When a user selects a business, the UI immediately renders these "static" cards.
+2.  **AI-Powered Chat (Backend):** When the user clicks "Ask Chatbot" or "Start Assessment":
+    *   The Frontend sends the user's profile (Land, Budget, Risk Appetite) to the Backend API (`/api/business-advisor/init`).
+    *   The Backend initializes a `KrishiSaarthiAdvisor` session.
+    *   It uses a Large Language Model (LLM) or structured logic to generate personalized advice.
+    *   **Context Awareness:** If the user comes from the Disease Detector, the detected disease info is passed to the Advisor, allowing it to suggest crops that are resistant to that specific disease or how to recover financial losses.
+
+### Q3: How is the Blockchain working?
+**Answer:**
+The Blockchain layer acts as a **Trust & Verification Layer** for the Green Credit Marketplace. It is built on **Ethereum (EVM)** principles using **Solidity** smart contracts and connected via **Ethers.js**.
+1.  **Smart Contracts:**
+    *   `Token Contract`: An ERC-20 standard token representing "Green Credits".
+    *   `Registry Contract`: Stores project details (Farmer ID, Crop Type, Verification Status).
+    *   `Marketplace Contract`: Allows holders to list their credits for sale and buyers to purchase them using ETH.
+2.  **Flow:**
+    *   **Step 1 (Minting):** A Validator approves a farmer's activity. The `verifyAndMint` function is called on the Registry contract, which mints new tokens to the farmer's wallet.
+    *   **Step 2 (Listing):** The farmer calls `approve` on the Token contract and `createListing` on the Marketplace contract to sell their credits.
+    *   **Step 3 (Buying):** A buyer sends ETH to the `buy` function on the Marketplace contract. The contract swaps the ETH to the farmer and the Credits to the buyer atomically.
+3.  **Network:** The app currently connects to the **Sepolia Testnet** for zero-cost testing.
+
+### Q4: How is the Disease Detector working?
+**Answer:**
+The Disease Detector uses **Deep Learning (CNN)** to analyze plant images.
+1.  **Input:** The user uploads an image via the React Frontend.
+2.  **Processing:** The image is sent to the Flask Backend (`/api/disease/detect`) as `multipart/form-data`.
+3.  **Inference:**
+    *   The backend loads a pre-trained TensorFlow/Keras model (`plant_disease_model.h5`).
+    *   The image is resized and normalized to match the model's input requirements (usually 224x224 pixels).
+    *   The model outputs a probability distribution across 38+ disease classes.
+4.  **Lookup:** The predicted class index is mapped to a human-readable name. The system then queries `crop_disease_data.csv` to find the specific cure, chemical control, and home remedies for that disease.
+5.  **Result:** The final JSON response containing the Disease Name, Confidence Score, and Treatment Plan is sent back to the Frontend for display.
+
+### Q5: How is everything linked?
+**Answer:**
+The system follows a **Microservices-like Architecture** where distinct components communicate via APIs and Shared State.
+1.  **Frontend $\leftrightarrow$ Backend:**
+    *   Linked via **REST APIs**. The React app sends HTTP POST requests to the Flask server for heavy computations (AI) and data retrieval.
+    *   *Example:* `BusinessAdvisor.tsx` $\rightarrow$ `fetch('http://localhost:5000/api/business-advisor/chat')`.
+2.  **Frontend $\leftrightarrow$ Firebase:**
+    *   Linked via **Firebase SDK**. Authentication state and user profile data (Firestore) are synchronized in real-time using listeners in `AppContext.tsx`.
+3.  **Frontend $\leftrightarrow$ Blockchain:**
+    *   Linked via **Ethers.js Provider**. The app injects itself into the browser's wallet (MetaMask) to sign transactions. It doesn't query a central server for blockchain data; it queries the decentralized node directly.
+4.  **Unified Experience:**
+    *   The **Context API** (`AppContext`, `BlockchainContext`) acts as the "glue" inside the Frontend. It ensures that a logged-in user's name (from Firebase) is visible on the Blockchain Dashboard, and their Wallet Balance (from Blockchain) is visible on the Business Page.
+
+### Q6: How does Dark Mode work?
+**Answer:**
+Dark mode is implemented using a **CSS-Class Strategy** combined with **Tailwind CSS**.
+1.  **Configuration:** The `tailwind.config.js` is set to `darkMode: 'class'`. This tells Tailwind to apply styles prefixed with `dark:` (e.g., `dark:bg-gray-900`) *only* when the `dark` class is present on a parent element.
+2.  **Context:** The `ThemeContext.tsx` provider manages the current theme state (`'light'` or `'dark'`).
+3.  **Persistence:** When the app loads, it checks `localStorage` for a saved preference.
+4.  **Toggling:** When the user clicks the toggle button:
+    *   The state updates.
+    *   The `dark` class is strictly added or removed from the `<html>` (root) element: `document.documentElement.classList.toggle('dark', isDark)`.
+    *   The new preference is saved to `localStorage`.
+
+### Q7: How is user access controlled?
+**Answer:**
+We use a **Client-Side Protection wrapper**:
+1.  **Component:** `ProtectedRoute.tsx` acts as a gatekeeper for private routes.
+2.  **Logic:** It consumes the `user` object from `AppContext`.
+    *   **Check 1 (Auth):** If `user` is null, it immediately redirects to `/login`.
+    *   **Check 2 (Role):** It accepts an `allowedRoles` array props (e.g., `['farmer']`). If `user.role` is not in this list, it redirects to the home page.
+3.  **Security Note:** While this prevents normal users from seeing unauthorized pages, vital data is further protected by **Firestore Security Rules** on the backend, ensuring that even if a user bypasses the UI, they cannot read restricted data.
+
+### Q8: What makes the application fast?
+**Answer:**
+Several architectural choices contribute to the speed:
+1.  **Vite Build Tool:** Unlike Create-React-App (Webpack), Vite serves source code over native ESM, making development feedback instant and production builds highly optimized.
+2.  **Local State for Translations:** Instead of fetching translation files from a server, they are bundled directly into the JS chunk (`AppContext.tsx`). This means 0ms latency when switching languages.
+3.  **Optimized Assets:** The app uses SVG icons (Lucide-React) instead of heavy image files where possible, and Tailwind generates minimal CSS bundles by purging unused styles.
+4.  **No unnecessary re-renders:** The architecture separates `BlockchainContext` (heavy Web3 logic) from `AppContext` (UI state), preventing blockchain updates from causing lag in the UI.
+
+---
+
+## 1️⃣7️⃣ FILE DICTIONARY (What Each File Does)
+
+This index explains the specific purpose of every key file in the repository to help developers navigate the codebase.
+
+### 📂 Frontend - Pages (`/Frontend/src/pages`)
+| File Name | Description | Key Features |
+| :--- | :--- | :--- |
+| **`Landing.tsx`** | The public home page. | Hero section with 3D elements, feature highlights, and 'Get Started' call-to-action. |
+| **`AuthPage.tsx`** | Combined Login and Signup interface. | Handles Toggle between Login/Signup, Role Selection (Farmer/Validator/Buyer), and form validation. |
+| **`FarmerDashboard.tsx`** | Main control center for Farmers. | Displays "Your Impact" stats, quick links to Disease Detector, Business Advisor, and Green Credits. |
+| **`ValidatorDashboard.tsx`** | Interface for Validators/Verifiers. | Fetches pending credit requests, allows viewing evidence images, and buttons to Approve (Mint) or Reject claims. |
+| **`BuyerDashboard.tsx`** | Marketplace view for Buyers. | Lists available carbon credits for sale (from Blockchain), allows filtering, and executing purchase transactions. |
+| **`CropDiseaseDetector.tsx`** | UI for the AI Disease Detection feature. | Handles image upload, sends it to Backend API, and displays the returned disease diagnosis + treatment. |
+| **`BusinessAdvisor.tsx`** | The Hybrid Advisory System. | **Tab 1 (Form):** Collects user data (budget, land). **Tab 2 (Results):** Shows static business cards. **Tab 3 (Chat):** Live AI chat interface. |
+| **`GreenCredit.tsx`** | Credit management page for Farmers. | Allows farmers to submit new sustainability claims (photos/description) and view their earned credits. |
+
+### 📂 Frontend - Contexts (`/Frontend/src/contexts`)
+| File Name | Description | Key Features |
+| :--- | :--- | :--- |
+| **`AppContext.tsx`** | The "Brain" of the Frontend. | Manages global State: User Profile (from Firebase), Current Language (English/Hindi/Marathi), and Translation Logic. |
+| **`BlockchainContext.tsx`** | The "Bridge" to Web3. | Connects to MetaMask, listens for account changes, and exposes Contract instances (Token, Registry, Marketplace) to the app. |
+| **`ThemeContext.tsx`** | UI Theme Manager. | Toggles between Light/Dark mode and persists preference in `localStorage`. |
+
+### 📂 Frontend - Services (`/Frontend/src/services`)
+| File Name | Description | Key Features |
+| :--- | :--- | :--- |
+| **`blockchain.ts`** | Core Web3 Logic library. | Functions to `connectWallet`, `verifyAndMint`, `buyFromMarketplace`. Wraps Ethers.js complexity. |
+| **`contracts.ts`** | Smart Contract Config. | Contains the **ABI** (Application Binary Interface) JSONs and deployed **Contract Addresses** for Sepolia network. |
+
+### 📂 Backend (`/Backend`)
+| File Name | Description | Key Features |
+| :--- | :--- | :--- |
+| **`app.py`** | Main API Entry Point. | A Flask server that defines routes: `/api/disease/detect`, `/api/business-advisor/chat`. Orchestrates requests. |
+| **`services/detector.py`** | AI Inference Module. | Loads the `.h5` model, pre-processes images (resizing/normalization), and runs prediction. |
+| **`services/krishi_chatbot.py`** | Advisory Logic Module. | Contains the `KrishiSaarthiAdvisor` class. Generates business advice based on farmer inputs using logic or LLM. |
+| **`services/crop_disease_data.csv`**| Static Knowledge Base. | A database file mapping "Disease Name" $\rightarrow$ "Cure/Chemical/Home Remedy". Used by `app.py` to enrich AI results. |
+| **`plant_disease_model.h5`** | The Brain (AI Model). | A binary file containing the pre-trained Convolutional Neural Network (CNN) weights for disease classification. |
+
+---
+
+
+### Q6: How does Dark Mode work?
+**Answer:**
+Dark mode is implemented using a **CSS-Class Strategy** combined with **Tailwind CSS**.
+1.  **Configuration:** The `tailwind.config.js` is set to `darkMode: 'class'`. This tells Tailwind to apply styles prefixed with `dark:` (e.g., `dark:bg-gray-900`) *only* when the `dark` class is present on a parent element.
+2.  **Context:** The `ThemeContext.tsx` provider manages the current theme state (`'light'` or `'dark'`).
+3.  **Persistence:** When the app loads, it checks `localStorage` for a saved preference.
+4.  **Toggling:** When the user clicks the toggle button:
+    *   The state updates.
+    *   The `dark` class is strictly added or removed from the `<html>` (root) element: `document.documentElement.classList.toggle('dark', isDark)`.
+    *   The new preference is saved to `localStorage`.
+
+### Q7: How is user access controlled?
+**Answer:**
+We use a **Client-Side Protection wrapper**:
+1.  **Component:** `ProtectedRoute.tsx` acts as a gatekeeper for private routes.
+2.  **Logic:** It consumes the `user` object from `AppContext`.
+    *   **Check 1 (Auth):** If `user` is null, it immediately redirects to `/login`.
+    *   **Check 2 (Role):** It accepts an `allowedRoles` array props (e.g., `['farmer']`). If `user.role` is not in this list, it redirects to the home page.
+3.  **Security Note:** While this prevents normal users from seeing unauthorized pages, vital data is further protected by **Firestore Security Rules** on the backend, ensuring that even if a user bypasses the UI, they cannot read restricted data.
+
+### Q8: What makes the application fast?
+**Answer:**
+Several architectural choices contribute to the speed:
+1.  **Vite Build Tool:** Unlike Create-React-App (Webpack), Vite serves source code over native ESM, making development feedback instant and production builds highly optimized.
+2.  **Local State for Translations:** Instead of fetching translation files from a server, they are bundled directly into the JS chunk (`AppContext.tsx`). This means 0ms latency when switching languages.
+3.  **Optimized Assets:** The app uses SVG icons (Lucide-React) instead of heavy image files where possible, and Tailwind generates minimal CSS bundles by purging unused styles.
+4.  **No unnecessary re-renders:** The architecture separates `BlockchainContext` (heavy Web3 logic) from `AppContext` (UI state), preventing blockchain updates from causing lag in the UI.
+
+---
+
+

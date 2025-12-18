@@ -78,7 +78,7 @@ We conducted extensive on-ground research to validate the problem statement. Our
 
 ### 1. Clone the Repository
 ```bash
-git clone https://github.com/StartTiwari07/KrishiSaarthi.git
+git clone https://github.com/SanTiwari07/KrishiSaarthi.git
 cd KrishiSaarthi
 ```
 
