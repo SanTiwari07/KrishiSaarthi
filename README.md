@@ -13,33 +13,33 @@ KrishiSaarthi is a next-generation "Phygital" (Physical + Digital) platform desi
 
 ---
 
-## 🌟 Key Features
+## Key Features
 
-### 1. 🤖 AI-Powered Disease Detector ("Crop Doctor")
+### 1. AI-Powered Disease Detector ("Crop Doctor")
 - **Instant Diagnosis**: Farmers can upload photos of their crops.
 - **AI Analysis**: Our advanced Deep Learning model (MobileNetV2/ResNet) identifies diseases with high accuracy.
 - **Actionable Advice**: Provides immediate treatment recommendations, pesticide suggestions, and preventive measures.
 - **Multilingual Support**: Available in English, Hindi, and Marathi.
 
-### 2. 💼 Business Advisor (Smart Investment)
+### 2. Business Advisor (Smart Investment)
 - **Personalized Recommendations**: Suggests profitable agricultural businesses (e.g., Beekeeping, Mushroom Farming, Organic Vegetables) based on the farmer's budget, land size, and region.
 - **ROI Calculation**: Provides detailed cost-benefit analysis and estimated profits using AI.
 - **Q&A Chatbot**: An interactive assistant to answer specific queries about starting new ventures.
 
-### 3. 🌿 Green Credit Marketplace (Blockchain)
+### 3. Green Credit Marketplace (Blockchain)
 - **Tokenize Sustainability**: Farmers earn "Green Credits" (ERC-20 tokens) for verified sustainable practices (Organic Farming, Water Conservation).
 - **Validator Network**: Third-party validators verify the claims physically and digitally.
 - **Transparent Trading**: Buyers (Corporates/Individuals) can purchase these credits directly from farmers to offset their carbon footprint.
 - **Smart Contracts**: Powered by Ethereum/Polygon smart contracts ensures secure and immutable transactions.
 
-### 4. 👥 Role-Based Ecosystem
+### 4. Role-Based Ecosystem
 - **Farmer**: Scan crops, get advice, apply for green credits.
 - **Validator**: Verify farmer applications, mint credits (Admin capability).
 - **Buyer**: Browse verified projects and purchase green credits.
 
 ---
 
-## � Validation Phase Zero: Ground Research
+## Validation Phase Zero: Ground Research
 **"Building with the User, not just for them."**
 
 We conducted extensive on-ground research to validate the problem statement. Our team visited local farms, markets, and rural communities to:
@@ -47,7 +47,7 @@ We conducted extensive on-ground research to validate the problem statement. Our
 - **Analyze Real Businesses**: We observed existing agricultural businesses to identify gaps in the supply chain and credit systems.
 - **Validate Problems**: This "Phase Zero" confirmed the necessity for a tech-enabled, trust-based solution like KrishiSaarthi.
 
-### 📸 Research Gallery
+### Research Gallery
 | | | | |
 |:---:|:---:|:---:|:---:|
 | ![Photo 1](Frontend/src/assets/zero-mile/photo1.jpeg) | ![Photo 2](Frontend/src/assets/zero-mile/photo2.jpeg) | ![Photo 3](Frontend/src/assets/zero-mile/photo3.jpeg) | ![Photo 4](Frontend/src/assets/zero-mile/photo4.jpeg) |
@@ -55,7 +55,7 @@ We conducted extensive on-ground research to validate the problem statement. Our
 
 ---
 
-## �🛠️ Technology Stack
+## Technology Stack
 
 | Layer | Technologies |
 |-------|--------------|
@@ -68,7 +68,7 @@ We conducted extensive on-ground research to validate the problem statement. Our
 
 ---
 
-## 🚀 Getting Started
+## Getting Started
 
 ### Prerequisites
 - **Node.js** (v18+)
@@ -119,19 +119,19 @@ Start the application (ensure your AI models are downloaded/linked properly).
 
 ## 📖 Usage Guide
 
-### 👨‍🌾 For Farmers
+### For Farmers
 1. **Login/Signup** as a Farmer.
 2. Go to **Disease Detector** to scan plants.
 3. Visit **Business Advisor** for investment ideas.
 4. Go to **Green Credits** -> **Apply** to submit proof of sustainable farming.
 
-### 👮 For Validators
+### For Validators
 1. **Login** with a Validator account.
 2. Connect your **MetaMask Admin Wallet**.
 3. View **Pending Requests** on the Dashboard.
 4. **Approve/Reject** applications based on evidence (Updates Blockchain).
 
-### 🏢 For Buyers
+### For Buyers
 1. **Login** as a Buyer.
 2. Go to the **Marketplace**.
 3. Browse "Verified" green projects.
@@ -139,21 +139,21 @@ Start the application (ensure your AI models are downloaded/linked properly).
 
 ---
 
-## 👥 Team
+## Team
 Our dedicated team working to bridge the gap between technology and agriculture:
 - **Kanishka Salgude**
 - **Srujan Satav**
 - **Sanskar Tiwari**
 
-## 🤝 Contributing
+## Contributing
 We welcome contributions! Please fork the repo, create a feature branch, and submit a PR.
 
-## 📄 License
+## License
 This project is licensed under the MIT License.
 
 ---
 <div align="center">
 
-*Built with ❤️ for Indian Farmers*
+*Built with love for Indian Farmers*
 
 </div>
