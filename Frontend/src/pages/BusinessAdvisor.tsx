@@ -47,11 +47,7 @@ export default function BusinessAdvisor() {
     const [messages, setMessages] = useState<ChatMessage[]>([]);
 
     // Initialize greeting effect
-    useEffect(() => {
-        setMessages([
-            { id: '1', sender: 'ai', text: t('chat.greeting'), timestamp: new Date() }
-        ]);
-    }, [t]);
+
 
     const [chatInput, setChatInput] = useState('');
     const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -86,15 +82,25 @@ export default function BusinessAdvisor() {
     const waterOptions = ['Rainfed', 'Canal Irrigation', 'Borewell', 'Drip Irrigation', 'River Nearby'];
 
     // Check if coming from disease detector
-    useEffect(() => {
-        const diseaseResult = location.state?.diseaseResult;
-        const fromDiseaseDetector = location.state?.fromDiseaseDetector;
+    const fromDiseaseDetector = location.state?.fromDiseaseDetector;
+    const diseaseResult = location.state?.diseaseResult;
 
+    useEffect(() => {
         if (fromDiseaseDetector && diseaseResult) {
             setView('chat'); // Go directly to chat
             initializeAdvisorWithDisease(diseaseResult);
         }
     }, [location.state]);
+
+    // Initialize greeting effect for normal flow
+    useEffect(() => {
+        // Only add greeting if chat is empty AND we are not coming from disease detector
+        if (messages.length === 0 && !fromDiseaseDetector) {
+            setMessages([
+                { id: '1', sender: 'ai', text: t('chat.greeting'), timestamp: new Date() }
+            ]);
+        }
+    }, [t, fromDiseaseDetector]);
 
     const scrollToBottom = () => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     useEffect(scrollToBottom, [messages]);
@@ -186,25 +192,38 @@ export default function BusinessAdvisor() {
             const initData = await initResponse.json();
             setSessionId(initData.session_id);
 
-            // Get advice
-            const adviceResponse = await fetch(`${API_BASE_URL}/business-advisor/integrated-advice`, {
+            // Construct strict prompt
+            const prompt = `I have detected ${diseaseResult.disease} in my crop. 
+            ACT AS A PLANT DOCTOR. 
+            Provide ONLY medical treatments, chemical/organic solutions, and preventative care. 
+            Do NOT mention money, profits, investment costs, or business planning. 
+            Focus strictly on curing the plant.`;
+
+            // Send initial strict prompt
+            const chatResponse = await fetch(`${API_BASE_URL}/business-advisor/chat`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     session_id: initData.session_id,
-                    disease_result: diseaseResult
+                    message: prompt
                 })
             });
-            if (!adviceResponse.ok) throw new Error('Failed to get advice');
-            const adviceData = await adviceResponse.json();
+
+            if (!chatResponse.ok) throw new Error('Failed to get advice');
+            const chatData = await chatResponse.json();
 
             setMessages(prev => [
                 ...prev,
-                { id: Date.now().toString(), sender: 'ai', text: `I see you have detected ${diseaseResult.disease}. Here is my advice: ${adviceData.response}`, timestamp: new Date() }
+                {
+                    id: Date.now().toString(),
+                    sender: 'ai',
+                    text: `Hi, I am AI Crop Doctor.\n\n${chatData.response}\n\n**Disclaimer**: *This is an AI-based suggestion. Please consult an agriculture expert for final confirmation.*`,
+                    timestamp: new Date()
+                }
             ]);
         } catch (err) {
             console.error(err);
-            setMessages(prev => [...prev, { id: 'err', sender: 'ai', text: 'I noticed the disease report but could not fetch specific advice right now. How can I help?', timestamp: new Date() }]);
+            setMessages(prev => [...prev, { id: 'err', sender: 'ai', text: 'I noticed the disease report but could not fetch specific advice right now. Please ask me about the symptoms.', timestamp: new Date() }]);
         } finally {
             setIsLoading(false);
         }
@@ -216,7 +235,6 @@ export default function BusinessAdvisor() {
 
         // If no session, try to init one silently (or handle error)
         if (!sessionId) {
-            // Simple init if missing
             try {
                 const res = await fetch(`${API_BASE_URL}/business-advisor/init`, {
                     method: 'POST',
@@ -242,12 +260,24 @@ export default function BusinessAdvisor() {
         setIsLoading(true);
 
         try {
+            // Context Injection for Disease Flow
+            let finalMessage = apiMessageOverride || textToSend;
+
+            if (fromDiseaseDetector && !apiMessageOverride) {
+                finalMessage += `
+                
+                (SYSTEM INSTRUCTION: You are a Plant Doctor. 
+                Focus ONLY on disease treatment, medicine, and biological care. 
+                Do NOT discuss business, money, or profits. 
+                If the user asks about money, politely steer back to plant health.)`;
+            }
+
             const response = await fetch(`${API_BASE_URL}/business-advisor/chat`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     session_id: sessionId,
-                    message: apiMessageOverride || textToSend
+                    message: finalMessage
                 })
             });
 
@@ -274,11 +304,11 @@ export default function BusinessAdvisor() {
         const business = BUSINESS_DETAILS[businessId];
         if (business) {
             // Construct a data string from the sections
-            const dataString = business.sections.map(s => `${s.title}:\n${s.content.join('\n')}`).join('\n\n');
+            const dataString = business.sections.map(s => `${s.title[language] || s.title['en']}:\n${(s.content[language] || s.content['en']).join('\n')}`).join('\n\n');
 
             setPendingContext({
                 title: business.title,
-                data: `BASIC IDEA: ${business.basicIdea.join(' ')}\n\n${dataString}`
+                data: `BASIC IDEA: ${(business.basicIdea[language] || business.basicIdea['en']).join(' ')}\n\n${dataString}`
             });
             setView('chat');
         } else {
@@ -664,7 +694,7 @@ export default function BusinessAdvisor() {
                                         <Info size={20} /> BASIC IDEA
                                     </h4>
                                     <ul className="list-disc list-inside space-y-2 text-gray-700 dark:text-gray-300 text-lg">
-                                        {BUSINESS_DETAILS[selectedBusinessId].basicIdea.map((line, idx) => (
+                                        {(BUSINESS_DETAILS[selectedBusinessId].basicIdea[language] || BUSINESS_DETAILS[selectedBusinessId].basicIdea['en']).map((line, idx) => (
                                             <li key={idx}>{line}</li>
                                         ))}
                                     </ul>
@@ -675,10 +705,10 @@ export default function BusinessAdvisor() {
                                     {BUSINESS_DETAILS[selectedBusinessId].sections.map((section, idx) => (
                                         <div key={idx} className="bg-gray-50 dark:bg-gray-700/30 p-5 rounded-2xl border border-gray-100 dark:border-gray-700">
                                             <h5 className="font-bold text-gray-900 dark:text-white mb-3 uppercase text-sm tracking-wider border-b border-gray-200 dark:border-gray-600 pb-2">
-                                                {section.title}
+                                                {section.title[language] || section.title['en']}
                                             </h5>
                                             <ul className="space-y-2">
-                                                {section.content.map((item, i) => (
+                                                {(section.content[language]?.length ? section.content[language] : section.content['en']).map((item, i) => (
                                                     <li key={i} className="text-gray-600 dark:text-gray-300 text-base leading-relaxed flex items-start gap-2">
                                                         <span className="mt-1.5 w-1.5 h-1.5 bg-green-500 rounded-full flex-shrink-0"></span>
                                                         <span>{item}</span>
@@ -700,9 +730,15 @@ export default function BusinessAdvisor() {
         return (
             <Wrapper>
                 <div className="flex items-center justify-between mb-4">
-                    <button onClick={() => setView('results')} className="text-gray-500 hover:text-primary flex items-center gap-2 font-bold text-lg transition-colors">
-                        <ArrowRight className="rotate-180" size={24} /> {t('back.to.results')}
-                    </button>
+                    {fromDiseaseDetector ? (
+                        <button onClick={() => navigate(-1)} className="text-gray-500 hover:text-primary flex items-center gap-2 font-bold text-lg transition-colors">
+                            <ArrowLeft size={24} /> {t('back.to.results')}
+                        </button>
+                    ) : (
+                        <button onClick={() => setView('results')} className="text-gray-500 hover:text-primary flex items-center gap-2 font-bold text-lg transition-colors">
+                            <ArrowRight className="rotate-180" size={24} /> {t('back.to.results')}
+                        </button>
+                    )}
                     <div className="flex items-center gap-2 px-4 py-2 bg-green-50 text-green-700 rounded-full font-bold text-sm">
                         <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
                         {t('live.advisor')}
@@ -717,7 +753,7 @@ export default function BusinessAdvisor() {
                         </div>
                         <div>
                             <h3 className="font-bold text-xl text-gray-900 dark:text-white">KrishiSaarthi AI</h3>
-                            <p className="text-sm text-gray-500 font-medium">{t('expert.advisor')}</p>
+                            <p className="text-sm text-gray-500 font-medium">{fromDiseaseDetector ? 'Plant Disease Expert' : t('expert.advisor')}</p>
                         </div>
                     </div>
 

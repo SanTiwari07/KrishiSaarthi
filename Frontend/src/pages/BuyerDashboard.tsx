@@ -30,8 +30,10 @@ export default function BuyerDashboard() {
     const { state: blockchainState, connect: connectWallet, isConnecting } = useBlockchain();
 
     const [marketplaceCredits, setMarketplaceCredits] = useState<Credit[]>([]);
+    const [myCredits, setMyCredits] = useState<Credit[]>([]);
     const [loading, setLoading] = useState(false);
     const [buyingId, setBuyingId] = useState<number | null>(null);
+    const [activeTab, setActiveTab] = useState<'market' | 'portfolio'>('market');
 
     // Mock Data for Demo
     const mockListings: Credit[] = [
@@ -105,11 +107,18 @@ export default function BuyerDashboard() {
             const storedListings = JSON.parse(localStorage.getItem('demoListings') || '[]');
             setMarketplaceCredits([...mappedCredits, ...storedListings, ...mockListings]);
 
+            // Load My Portfolio
+            const myPortfolio = JSON.parse(localStorage.getItem('myPortfolio') || '[]');
+            setMyCredits(myPortfolio);
+
         } catch (err) {
             console.error("Failed to load listings", err);
             // Fallback to stored listings on error + mocks
             const storedListings = JSON.parse(localStorage.getItem('demoListings') || '[]');
             setMarketplaceCredits([...storedListings, ...mockListings]);
+
+            const myPortfolio = JSON.parse(localStorage.getItem('myPortfolio') || '[]');
+            setMyCredits(myPortfolio);
         } finally {
             setLoading(false);
         }
@@ -157,6 +166,22 @@ export default function BuyerDashboard() {
             // Notify other tabs
             window.dispatchEvent(new Event('storage'));
             window.dispatchEvent(new Event('marketplace-updated'));
+
+            // Create Receipt for Demo
+            const purchasedItem = marketplaceCredits.find(c => c.id === id);
+            if (purchasedItem) {
+                const receipt: Credit = {
+                    ...purchasedItem,
+                    id: Date.now(), // Unique ID for the receipt
+                    creditAmount: purchasedItem.creditAmount, // Buy full amount for demo
+                    status: 'sold',
+                    submissionDate: new Date().toISOString() // Purchase Date
+                };
+                const currentPortfolio = JSON.parse(localStorage.getItem('myPortfolio') || '[]');
+                const newPortfolio = [receipt, ...currentPortfolio];
+                localStorage.setItem('myPortfolio', JSON.stringify(newPortfolio));
+                setMyCredits(newPortfolio); // Update local state immediately
+            }
             return;
         }
 
@@ -178,6 +203,23 @@ export default function BuyerDashboard() {
                 id,
                 amountToBuy
             );
+
+            // Create Receipt
+            const purchasedItem = marketplaceCredits.find(c => c.id === id);
+            if (purchasedItem) {
+                const receipt: Credit = {
+                    ...purchasedItem,
+                    id: Date.now(), // Unique ID for the receipt
+                    creditAmount: amountToBuy,
+                    status: 'sold',
+                    submissionDate: new Date().toISOString() // Purchase Date
+                };
+                const currentPortfolio = JSON.parse(localStorage.getItem('myPortfolio') || '[]');
+                const newPortfolio = [receipt, ...currentPortfolio];
+                localStorage.setItem('myPortfolio', JSON.stringify(newPortfolio));
+                setMyCredits(newPortfolio);
+            }
+
             alert(t('success.purchase'));
             loadListings(); // Refresh
         } catch (err: any) {
@@ -223,6 +265,20 @@ export default function BuyerDashboard() {
                     <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('marketplace.title')}</h1>
                     <p className="text-gray-500">{t('investFuture')}</p>
                 </div>
+                <div className="flex bg-gray-100 dark:bg-gray-800 p-1 rounded-xl">
+                    <button
+                        onClick={() => setActiveTab('market')}
+                        className={`px-6 py-2 rounded-lg font-bold transition-all ${activeTab === 'market' ? 'bg-white dark:bg-gray-700 shadow text-primary' : 'text-gray-500'}`}
+                    >
+                        {t('market') || 'Market'}
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('portfolio')}
+                        className={`px-6 py-2 rounded-lg font-bold transition-all ${activeTab === 'portfolio' ? 'bg-white dark:bg-gray-700 shadow text-primary' : 'text-gray-500'}`}
+                    >
+                        {t('portfolio') || 'My Portfolio'}
+                    </button>
+                </div>
                 <div className="flex gap-2">
                     <button
                         onClick={loadListings}
@@ -231,63 +287,103 @@ export default function BuyerDashboard() {
                         <RefreshCw size={18} className={loading && marketplaceCredits.length > 0 ? "animate-spin" : ""} />
                         {t('refresh')}
                     </button>
-                    <button className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-                        <Filter size={18} /> {t('filter')}
-                    </button>
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {marketplaceCredits.map(credit => (
-                    <div key={credit.id} className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden hover:shadow-lg transition-shadow">
-                        <div className="h-40 bg-gray-200 dark:bg-gray-700 relative flex items-center justify-center">
-                            <Leaf size={48} className="text-gray-400" />
-                            <div className="absolute top-4 right-4 bg-white dark:bg-gray-800 px-3 py-1 rounded-full text-xs font-bold shadow-sm uppercase tracking-wide">
-                                {t(`act.${credit.activityType.toLowerCase()}` as any) || credit.activityType}
+            {activeTab === 'market' ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {marketplaceCredits.map(credit => (
+                        <div key={credit.id} className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden hover:shadow-lg transition-shadow">
+                            <div className="h-40 bg-gray-200 dark:bg-gray-700 relative flex items-center justify-center">
+                                <Leaf size={48} className="text-gray-400" />
+                                <div className="absolute top-4 right-4 bg-white dark:bg-gray-800 px-3 py-1 rounded-full text-xs font-bold shadow-sm uppercase tracking-wide">
+                                    {t(`act.${credit.activityType.toLowerCase()}` as any) || credit.activityType}
+                                </div>
+                            </div>
+
+                            <div className="p-6">
+                                <div className="flex justify-between items-start mb-4">
+                                    <div>
+                                        <h3 className="font-bold text-lg text-gray-900 dark:text-white capitalize">{t(`act.${credit.activityType.toLowerCase()}` as any) || credit.activityType} {t('credit.suffix')}</h3>
+                                        <p className="text-sm text-gray-500 dark:text-gray-400">{credit.farmerName} • {credit.location}</p>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-3 mb-6">
+                                    <div className="flex justify-between text-sm">
+                                        <span className="text-gray-500 dark:text-gray-400">{t('quantity')}</span>
+                                        <span className="font-semibold dark:text-gray-200">{credit.creditAmount} {t('amount')}</span>
+                                    </div>
+                                    <div className="flex justify-between text-sm">
+                                        <span className="text-gray-500 dark:text-gray-400">{t('impact')}</span>
+                                        <span className="font-semibold dark:text-gray-200 text-green-600">50kg CO2e</span>
+                                    </div>
+                                    <div className="flex justify-between text-sm items-center pt-2 border-t border-gray-100 dark:border-gray-700">
+                                        <span className="text-gray-500 dark:text-gray-400">{t('price')}</span>
+                                        <span className="text-2xl font-bold text-gray-900 dark:text-white">₹{credit.price || 100}</span>
+                                    </div>
+                                </div>
+
+                                <button
+                                    onClick={() => handleBuy(credit.id, credit.creditAmount)}
+                                    disabled={!!buyingId}
+                                    className={`w-full py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-all ${buyingId === credit.id
+                                        ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 cursor-not-allowed'
+                                        : 'bg-primary text-white hover:bg-primary-dark shadow-md hover:shadow-lg transform hover:-translate-y-0.5'
+                                        }`}
+                                >
+                                    {buyingId === credit.id ? (
+                                        <Loader2 className="animate-spin" />
+                                    ) : (
+                                        <><ShoppingCart size={18} /> {t('buy')}</>
+                                    )}
+                                </button>
                             </div>
                         </div>
-
-                        <div className="p-6">
-                            <div className="flex justify-between items-start mb-4">
-                                <div>
-                                    <h3 className="font-bold text-lg text-gray-900 dark:text-white capitalize">{t(`act.${credit.activityType.toLowerCase()}` as any) || credit.activityType} {t('credit.suffix')}</h3>
-                                    <p className="text-sm text-gray-500 dark:text-gray-400">{credit.farmerName} • {credit.location}</p>
-                                </div>
-                            </div>
-
-                            <div className="space-y-3 mb-6">
-                                <div className="flex justify-between text-sm">
-                                    <span className="text-gray-500 dark:text-gray-400">{t('quantity')}</span>
-                                    <span className="font-semibold dark:text-gray-200">{credit.creditAmount} {t('amount')}</span>
-                                </div>
-                                <div className="flex justify-between text-sm">
-                                    <span className="text-gray-500 dark:text-gray-400">{t('impact')}</span>
-                                    <span className="font-semibold dark:text-gray-200 text-green-600">50kg CO2e</span>
-                                </div>
-                                <div className="flex justify-between text-sm items-center pt-2 border-t border-gray-100 dark:border-gray-700">
-                                    <span className="text-gray-500 dark:text-gray-400">{t('price')}</span>
-                                    <span className="text-2xl font-bold text-gray-900 dark:text-white">₹{credit.price || 100}</span>
-                                </div>
-                            </div>
-
-                            <button
-                                onClick={() => handleBuy(credit.id, credit.creditAmount)}
-                                disabled={!!buyingId}
-                                className={`w-full py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-all ${buyingId === credit.id
-                                    ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 cursor-not-allowed'
-                                    : 'bg-primary text-white hover:bg-primary-dark shadow-md hover:shadow-lg transform hover:-translate-y-0.5'
-                                    }`}
-                            >
-                                {buyingId === credit.id ? (
-                                    <Loader2 className="animate-spin" />
-                                ) : (
-                                    <><ShoppingCart size={18} /> {t('buy')}</>
-                                )}
-                            </button>
+                    ))}
+                </div>
+            ) : (
+                <div className="space-y-6">
+                    {/* Portfolio View */}
+                    {myCredits.length === 0 ? (
+                        <div className="text-center p-16 bg-white dark:bg-gray-800 rounded-3xl border border-gray-200 dark:border-gray-700">
+                            <Leaf className="w-16 h-16 text-gray-200 mx-auto mb-4" />
+                            <h3 className="text-xl font-bold text-gray-400">{t('no.purchases') || 'No purchases yet'}</h3>
+                            <p className="text-gray-500 mt-2">Support farmers to build your portfolio</p>
                         </div>
-                    </div>
-                ))}
-            </div>
+                    ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            {myCredits.map(credit => (
+                                <div key={credit.id} className="bg-white dark:bg-gray-800 rounded-2xl border-l-4 border-l-green-500 shadow-sm p-6 relative">
+                                    <div className="absolute top-4 right-4 bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-bold">OWNED</div>
+                                    <div className="flex items-center gap-3 mb-4">
+                                        <div className="p-3 bg-green-50 rounded-full text-green-600">
+                                            <Leaf size={24} />
+                                        </div>
+                                        <div>
+                                            <p className="text-xs text-gray-400">{new Date(credit.submissionDate).toLocaleDateString()}</p>
+                                            <h3 className="font-bold text-gray-900 dark:text-white">{t(`act.${credit.activityType.toLowerCase()}` as any) || credit.activityType}</h3>
+                                        </div>
+                                    </div>
+                                    <div className="py-2 border-t border-gray-100 dark:border-gray-700 mt-2">
+                                        <div className="flex justify-between text-sm mb-1">
+                                            <span className="text-gray-500">Contribution</span>
+                                            <span className="font-bold">{credit.creditAmount} Cr</span>
+                                        </div>
+                                        <div className="flex justify-between text-sm">
+                                            <span className="text-gray-500">From</span>
+                                            <span className="text-gray-700">{credit.farmerName}</span>
+                                        </div>
+                                    </div>
+                                    <div className="mt-4 pt-3 text-center">
+                                        <a href={`https://sepolia.etherscan.io/address/${credit.sellerAddress}`} target="_blank" className="text-xs text-blue-500 hover:underline">View on Etherscan</a>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            )}
         </div>
     );
 }

@@ -31,3 +31,6 @@ build/
 .firebase/
 
 Frontend/src/firebase.ts
+
+# 1_VOIS folder
+1_VOIS/

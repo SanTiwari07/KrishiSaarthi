@@ -35,6 +35,7 @@ interface AppContextType {
   signup: (userData: any, password: string) => Promise<void>;
   t: (key: string) => string;
   loading: boolean;
+  incrementScans: () => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -482,6 +483,22 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const incrementScans = async () => {
+    if (!user) return;
+    try {
+      const newCount = (user.scansCount || 0) + 1;
+      const userRef = doc(db, 'users', user.id);
+
+      // Update Firestore
+      await setDoc(userRef, { scansCount: newCount }, { merge: true });
+
+      // Update local state
+      setUser({ ...user, scansCount: newCount });
+    } catch (error) {
+      console.error('Error incrementing scan count:', error);
+    }
+  };
+
   const logout = async () => {
     try {
       await signOut(auth);
@@ -492,7 +509,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AppContext.Provider value={{ language, setLanguage, user, setUser, logout, login, signup, t, loading }}>
+    <AppContext.Provider value={{ language, setLanguage, user, setUser, logout, login, signup, t, loading, incrementScans }}>
       {loading ? (
         <div className="flex h-screen w-full items-center justify-center bg-gray-50 dark:bg-gray-900">
           <div className="flex flex-col items-center gap-4">

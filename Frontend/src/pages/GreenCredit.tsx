@@ -12,7 +12,10 @@ import {
     setupAccountListener,
     setupChainListener,
     type BlockchainState,
+    approveTokens,
+    createListing
 } from '../services/blockchain';
+import { MARKETPLACE_ADDRESS } from '../services/contracts';
 import { db } from '../firebase';
 import { doc, setDoc } from 'firebase/firestore';
 
@@ -96,17 +99,25 @@ export default function GreenCredit() {
                 getTokenBalance(state.tokenContract, state.address),
             ]);
 
-            const activitiesData: Activity[] = projects.map((project) => ({
-                id: project.id,
-                type: project.projectType,
-                description: project.offChainHash.split('|')[0] || 'No description', // Simple parse
-                images: [], // Images would be fetched from IPFS/Backend in real app
-                status: project.status === 'Verified' ? 'approved' : 'pending',
-                credits: project.status === 'Verified' ? 10 : 0, // Mock credits if not in contract
-                date: new Date().toISOString(),
-                txHash: undefined,
-                location: 'On-Chain'
-            }));
+            const activitiesData: Activity[] = projects.map((project) => {
+                const parts = project.offChainHash.split('|');
+                const timestamp = parts[3] ? parseInt(parts[3]) : null;
+                // If timestamp exists, use it. Otherwise, simulate history: Today - (id * 1 day)
+                const fallbackDate = new Date(Date.now() - (project.id * 86400000)).toISOString();
+                const realDate = (timestamp && !isNaN(timestamp) && timestamp > 0) ? new Date(timestamp).toISOString() : fallbackDate;
+
+                return {
+                    id: project.id,
+                    type: project.projectType,
+                    description: parts[0] || 'No description',
+                    images: [],
+                    status: project.status === 'Verified' ? 'approved' : 'pending',
+                    credits: project.status === 'Verified' ? 10 : 0,
+                    date: realDate,
+                    txHash: undefined,
+                    location: 'On-Chain'
+                };
+            });
 
             setActivities(activitiesData);
             setTokenBalance(parseFloat(balance).toFixed(2));
@@ -199,6 +210,42 @@ export default function GreenCredit() {
             }, 2000);
         } catch (err: any) {
             setError(err.message || 'Failed to submit activity');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleSell = async (credit: Activity) => {
+        if (!blockchainState?.marketplaceContract || !blockchainState?.tokenContract) return;
+
+        const amountToSellStr = prompt(`${t('prompt.sell')} ${credit.credits})`, credit.credits?.toString());
+        if (!amountToSellStr) return;
+
+        const amountToSell = parseFloat(amountToSellStr);
+        if (isNaN(amountToSell) || amountToSell <= 0 || amountToSell > (credit.credits || 0)) {
+            alert(`${t('error.invalid_amount')} ${credit.credits}`);
+            return;
+        }
+
+        setIsLoading(true);
+        try {
+            // 1. Approve
+            await approveTokens(blockchainState.tokenContract, MARKETPLACE_ADDRESS, amountToSell);
+
+            // 2. List
+            const txHash = await createListing(blockchainState.marketplaceContract, amountToSell);
+
+            setSuccess(`Listed for sale! TX: ${txHash.substring(0, 10)}...`);
+
+            // Allow time for propagation
+            setTimeout(() => {
+                loadFarmerData(blockchainState);
+                setSuccess(null);
+            }, 3000);
+
+        } catch (err: any) {
+            console.error(err);
+            setError(err.message || 'Failed to list for sale');
         } finally {
             setIsLoading(false);
         }
@@ -383,6 +430,15 @@ export default function GreenCredit() {
                                     <div className="text-right">
                                         <div className="text-2xl font-bold text-primary">{credit.credits} Cr</div>
                                         {credit.txHash && <div className="text-xs text-gray-400 font-mono">TX: {credit.txHash.substring(0, 6)}...</div>}
+
+                                        {credit.status === 'approved' && (
+                                            <button
+                                                onClick={() => handleSell(credit)}
+                                                className="mt-2 bg-green-600 text-white px-4 py-1.5 rounded-lg text-sm font-bold shadow hover:bg-green-700 transition-colors flex items-center gap-1 ml-auto"
+                                            >
+                                                <Coins size={14} /> {t('sell') || 'Sell'}
+                                            </button>
+                                        )}
                                     </div>
                                 </div>
                             </div>

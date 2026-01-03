@@ -19,7 +19,7 @@ interface DiseaseResult {
 }
 
 export default function CropDiseaseDetector() {
-    const { t } = useApp();
+    const { t, incrementScans } = useApp();
     const navigate = useNavigate();
     const [image, setImage] = useState<string | null>(null);
     const [scanning, setScanning] = useState(false);
@@ -72,6 +72,8 @@ export default function CropDiseaseDetector() {
                     description: data.result.description || `Detected ${data.result.severity} severity ${data.result.disease} in ${data.result.crop}.`,
                     pathogen: data.result.pathogen,
                 });
+                // Increment scan count
+                incrementScans();
             } else {
                 throw new Error('Invalid response from server');
             }
@@ -166,7 +168,7 @@ export default function CropDiseaseDetector() {
                             {t(result.description || '')}
                         </p>
 
-                        <div className="grid md:grid-cols-2 gap-6">
+                        <div className="grid md:grid-cols-2 gap-6 mb-6">
                             <div className="bg-blue-50 dark:bg-blue-900/20 p-5 rounded-xl border border-blue-100 dark:border-blue-800">
                                 <h4 className="font-bold text-blue-700 dark:text-blue-300 mb-3 flex items-center gap-2 text-lg"><Info size={20} /> {t('treatment')}</h4>
                                 <ul className="space-y-2">
@@ -189,6 +191,19 @@ export default function CropDiseaseDetector() {
                                     </ul>
                                 </div>
                             )}
+                        </div>
+
+                        {/* Chatbot Action Button */}
+                        <div className="flex justify-center">
+                            <button
+                                onClick={() => navigate('/business-advisor', { state: { fromDiseaseDetector: true, diseaseResult: result } })}
+                                className="bg-gradient-to-r from-primary to-green-600 text-white px-8 py-4 rounded-xl font-bold text-lg shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all flex items-center gap-3"
+                            >
+                                <div className="p-2 bg-white/20 rounded-full">
+                                    <Scan className="w-6 h-6 text-white" />
+                                </div>
+                                {'Chat with AI Agent'}
+                            </button>
                         </div>
                     </div>
                 )}
