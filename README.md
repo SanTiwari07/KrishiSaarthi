@@ -20,6 +20,7 @@ KrishiSaarthi is a next-generation "Phygital" (Physical + Digital) platform desi
 - **AI Analysis**: Our advanced Deep Learning model (MobileNetV2/ResNet) identifies diseases with high accuracy.
 - **Actionable Advice**: Provides immediate treatment recommendations, pesticide suggestions, and preventive measures.
 - **Multilingual Support**: Available in English, Hindi, and Marathi.
+- **Q&A Chatbot**: An interactive assistant to answer specific queries about the disease detected or the crop.
 
 ### 2. Business Advisor (Smart Investment)
 - **Personalized Recommendations**: Suggests profitable agricultural businesses (e.g., Beekeeping, Mushroom Farming, Organic Vegetables) based on the farmer's budget, land size, and region.
