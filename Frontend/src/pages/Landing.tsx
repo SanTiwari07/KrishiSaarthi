@@ -39,7 +39,7 @@ export default function Landing() {
             color: 'bg-yellow-100',
         },
         {
-            icon: <GraduationCap className="w-10 h-10 text-purple-600" />,
+            icon: <Coins className="w-10 h-10 text-purple-600" />,
             title: t('contact.expert'),
             desc: t('contact.expert.desc'),
             color: 'bg-purple-100',

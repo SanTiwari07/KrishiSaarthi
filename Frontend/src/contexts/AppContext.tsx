@@ -101,8 +101,8 @@ const translations: Record<string, Record<Language, string>> = {
   'risk.level': { en: 'Risk Level', hi: 'जोखिम स्तर', mr: 'जोखीम स्तर' },
   'sustainability': { en: 'Sustainability Score', hi: 'स्थिरता स्कोर', mr: 'शाश्वतता स्कोअर' },
   'chat.advisor': { en: 'Chat with AI Advisor', hi: 'एआई सलाहकार से चैट करें', mr: 'एआय सल्लागाराशी चॅट करा' },
-  'contact.expert': { en: 'Contact Expert', hi: 'विशेषज्ञ से संपर्क करें', mr: 'तज्ञाशी संपर्क करा' },
-  'contact.expert.desc': { en: 'Get personalized expert guidance', hi: 'व्यक्तिगत विशेषज्ञ मार्गदर्शन प्राप्त करें', mr: 'वैयक्तिक तज्ञ मार्गदर्शन मिळवा' },
+  'contact.expert': { en: 'Buy Credits', hi: 'क्रेडिट खरीदें', mr: 'क्रेडिट खरेदी करा' },
+  'contact.expert.desc': { en: 'Purchase verified green credits', hi: 'सत्यापित ग्रीन क्रेडिट्स खरीदें', mr: 'सत्यापित ग्रीन क्रेडिट्स खरेदी करा' },
   'download.report': { en: 'Download Report', hi: 'रिपोर्ट डाउनलोड करें', mr: 'अहवाल डाउनलोड करा' },
 
   // Green Credit
