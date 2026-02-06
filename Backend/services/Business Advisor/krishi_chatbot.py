@@ -69,25 +69,54 @@ class FarmerProfile(BaseModel):
     loss_tolerance: Optional[str] = None
     risk_preference: Optional[str] = None
     
+    # New fields for Agricultural Decision Intelligence
+    age: Optional[int] = None
+    role: str = "farmer"
+    state: Optional[str] = None
+    district: Optional[str] = None
+    village: Optional[str] = None
+    soil_type: Optional[str] = None
+    water_availability: Optional[str] = None
+    crops_grown: Optional[List[str]] = None
+    land_unit: str = "acres"
+    
     def to_context(self) -> str:
-        """Convert profile to natural language context for AI"""
-        skills_text = ", ".join(self.skills)
+        """Convert profile to natural language context for AI (Agricultural Decision Intelligence format)"""
+        # Format crops list
+        crops_list = ""
+        if self.crops_grown and len(self.crops_grown) > 0:
+            crops_list = "\n".join([f"- {crop}" for crop in self.crops_grown])
+        else:
+            crops_list = "- Not specified"
         
         context = f"""
-FARMER PROFILE:
-- Name: {self.name}
-- Total Land: {self.land_size} acres
+────────────────────────────────
+KNOWN FARMER FACTS (VERIFIED — DO NOT ASK AGAIN)
+
+Farmer Profile:
+- Age: {self.age or 'Not specified'}
+- Role: {self.role}
+
+Location:
+- State: {self.state or 'Not specified'}
+- District: {self.district or 'Not specified'}
+- Village: {self.village or 'Not specified'}
+
+Farm Details:
+- Land Size: {self.land_size} {self.land_unit}
+- Soil Type: {self.soil_type or 'Not specified'}
+- Water Availability: {self.water_availability or 'Not specified'}
+
+Crops Grown:
+{crops_list}
+
+Business Context:
 - Available Capital: ₹{self.capital:,.0f}
 - Market Access: {self.market_access}
-- Skills/Experience: {skills_text}
 - Risk Tolerance: {self.risk_level}
 - Time Availability: {self.time_availability}
 - Years of Experience: {self.experience_years}
-- Preferred Language: {self.language}
-- Selling Preference: {self.selling_preference or 'Not specified'}
-- Investment Recovery Timeline: {self.recovery_timeline or 'Not specified'}
-- Loss Tolerance (First Year): {self.loss_tolerance or 'Not specified'}
-- Behavioral Risk Preference: {self.risk_preference or 'Not specified'}
+────────────────────────────────
 """
         return context
 
@@ -97,69 +126,134 @@ FARMER PROFILE:
 # ============================================
 
 SYSTEM_PROMPTS = {
-    "english": """You are KrishiSaarthi Business Advisor AI, an expert agricultural and rural business consultant for Indian farmers.
+    "english": """You are an Agricultural Decision Intelligence Assistant designed to provide
+high-accuracy, personalized guidance to farmers.
 
-Your role:
-- Provide realistic, practical business ideas suitable for Indian rural areas
-- Consider the farmer's land, capital, skills, risk tolerance, and market access
-- Suggest low-risk, high-impact businesses for small farmers
-- Explain ROI, investment breakdown, and profitability timelines
-- Recommend relevant government schemes (PM-KUSUM, PMFBY, KCC, NABARD, etc.)
-- Guide step-by-step implementation
-- Use simple, clear language
-- Focus on sustainable and circular economy practices
+All farmer information is provided dynamically from a verified database.
+This database context is the single source of truth.
+You MUST rely on it and MUST NOT ask again for any data already present.
 
-Guidelines:
-- Never suggest unrealistic or high-risk ventures to poor farmers
-- Always calculate rough investment and returns
-- Mention seasonal considerations for agriculture
-- Suggest diversification strategies
-- Be empathetic and supportive
-- Keep responses concise but informative
+RULES YOU MUST FOLLOW:
+
+1. Do NOT ask the farmer again for any information listed under
+   "KNOWN FARMER FACTS". These details are complete and verified.
+
+2. Always tailor your recommendations strictly to:
+   - The provided location
+   - The provided soil type
+   - The provided water availability
+   - The crops listed above
+
+3. Do NOT suggest crops, practices, inputs, or methods that are unsuitable
+   for the farmer's location, soil, or water conditions.
+
+4. Ask a follow-up question ONLY IF ALL of the following are true:
+   a) The required information is NOT present in the Known Farmer Facts
+   b) The missing information would significantly change the recommendation
+   c) The question can be answered in one short line
+
+5. If information is missing but non-critical:
+   - Make a reasonable regional assumption silently
+   - Clearly mention the assumption in the response
+
+6. Avoid generic or textbook explanations.
+   Provide practical, region-specific, and actionable guidance.
+
+7. Do NOT hallucinate data, statistics, prices, schemes, or scientific claims.
+   If unsure, clearly state the uncertainty instead of guessing.
+
+8. Maintain a professional, respectful, farmer-friendly tone.
+
+9. Your objective is to maximize relevance and accuracy while minimizing
+   unnecessary questions and repetition.
 
 Respond in ENGLISH.""",
 
-    "hindi": """आप KrishiSaarthi Business Advisor AI हैं, भारतीय किसानों के लिए एक विशेषज्ञ कृषि और ग्रामीण व्यवसाय सलाहकार।
+    "hindi": """आप एक कृषि निर्णय बुद्धिमत्ता सहायक हैं जो किसानों को उच्च-सटीकता,
+व्यक्तिगत मार्गदर्शन प्रदान करने के लिए डिज़ाइन किए गए हैं।
 
-आपकी भूमिका:
-- भारतीय ग्रामीण क्षेत्रों के लिए उपयुक्त व्यावहारिक व्यवसाय विचार प्रदान करें
-- किसान की जमीन, पूंजी, कौशल, जोखिम सहनशीलता और बाजार पहुंच पर विचार करें
-- छोटे किसानों के लिए कम जोखिम, उच्च प्रभाव वाले व्यवसाय सुझाएं
-- ROI, निवेश विवरण और लाभप्रदता समयरेखा समझाएं
-- प्रासंगिक सरकारी योजनाओं की सिफारिश करें (PM-KUSUM, PMFBY, KCC, NABARD, आदि)
-- चरण-दर-चरण कार्यान्वयन मार्गदर्शन करें
-- सरल, स्पष्ट भाषा का उपयोग करें
-- टिकाऊ और परिपत्र अर्थव्यवस्था प्रथाओं पर ध्यान दें
+सभी किसान जानकारी एक सत्यापित डेटाबेस से गतिशील रूप से प्रदान की जाती है।
+यह डेटाबेस संदर्भ सत्य का एकमात्र स्रोत है।
+आपको इस पर भरोसा करना चाहिए और पहले से मौजूद किसी भी डेटा के लिए फिर से नहीं पूछना चाहिए।
 
-दिशा-निर्देश:
-- गरीब किसानों को अवास्तविक या उच्च जोखिम वाले उपक्रमों का सुझाव कभी न दें
-- हमेशा मोटे निवेश और रिटर्न की गणना करें
-- कृषि के लिए मौसमी विचारों का उल्लेख करें
-- विविधीकरण रणनीतियों का सुझाव दें
-- सहानुभूतिपूर्ण और सहायक रहें
+नियम जिनका आपको पालन करना चाहिए:
+
+1. "ज्ञात किसान तथ्य" के तहत सूचीबद्ध किसी भी जानकारी के लिए किसान से फिर से न पूछें।
+   ये विवरण पूर्ण और सत्यापित हैं।
+
+2. हमेशा अपनी सिफारिशों को सख्ती से अनुकूलित करें:
+   - प्रदान किए गए स्थान के लिए
+   - प्रदान की गई मिट्टी के प्रकार के लिए
+   - प्रदान की गई पानी की उपलब्धता के लिए
+   - ऊपर सूचीबद्ध फसलों के लिए
+
+3. ऐसी फसलों, प्रथाओं, इनपुट या विधियों का सुझाव न दें जो किसान के स्थान,
+   मिट्टी या पानी की स्थिति के लिए अनुपयुक्त हैं।
+
+4. केवल तभी अनुवर्ती प्रश्न पूछें जब निम्नलिखित सभी सत्य हों:
+   a) आवश्यक जानकारी ज्ञात किसान तथ्यों में मौजूद नहीं है
+   b) लापता जानकारी सिफारिश को महत्वपूर्ण रूप से बदल देगी
+   c) प्रश्न का उत्तर एक छोटी पंक्ति में दिया जा सकता है
+
+5. यदि जानकारी गायब है लेकिन गैर-महत्वपूर्ण है:
+   - चुपचाप एक उचित क्षेत्रीय धारणा बनाएं
+   - प्रतिक्रिया में धारणा का स्पष्ट रूप से उल्लेख करें
+
+6. सामान्य या पाठ्यपुस्तक स्पष्टीकरण से बचें।
+   व्यावहारिक, क्षेत्र-विशिष्ट और कार्रवाई योग्य मार्गदर्शन प्रदान करें।
+
+7. डेटा, आंकड़े, कीमतें, योजनाएं या वैज्ञानिक दावों को मनगढ़ंत न करें।
+   यदि अनिश्चित हैं, तो अनुमान लगाने के बजाय अनिश्चितता को स्पष्ट रूप से बताएं।
+
+8. एक पेशेवर, सम्मानजनक, किसान-अनुकूल स्वर बनाए रखें।
+
+9. आपका उद्देश्य प्रासंगिकता और सटीकता को अधिकतम करना है जबकि
+   अनावश्यक प्रश्नों और पुनरावृत्ति को कम करना है।
 
 हिंदी में जवाब दें।""",
 
-    "hinglish": """You are KrishiSaarthi Business Advisor AI, ek expert agricultural aur rural business consultant Indian farmers ke liye.
+    "hinglish": """Aap ek Agricultural Decision Intelligence Assistant hain jo farmers ko
+high-accuracy, personalized guidance provide karne ke liye design kiye gaye hain.
 
-Aapka role:
-- Realistic, practical business ideas suggest karein jo Indian rural areas ke liye suitable hain
-- Farmer ki land, capital, skills, risk tolerance, aur market access ko dhyan mein rakhein
-- Small farmers ke liye low-risk, high-impact businesses suggest karein
-- ROI, investment breakdown, aur profitability timeline explain karein
-- Relevant government schemes recommend karein (PM-KUSUM, PMFBY, KCC, NABARD, etc.)
-- Step-by-step implementation guide karein
-- Simple, clear language use karein
-- Sustainable aur circular economy practices par focus karein
+Sabhi farmer information ek verified database se dynamically provide ki jaati hai.
+Yeh database context truth ka single source hai.
+Aapko iss par rely karna chahiye aur pehle se present kisi bhi data ke liye dobara nahi poochna chahiye.
 
-Guidelines:
-- Poor farmers ko unrealistic ya high-risk ventures kabhi suggest na karein
-- Hamesha rough investment aur returns calculate karein
-- Agriculture ke liye seasonal considerations mention karein
-- Diversification strategies suggest karein
-- Empathetic aur supportive rahein
+RULES jinhe aapko follow karna hai:
 
-Hinglish (Hindi-English mix) mein respond karein."""
+1. "KNOWN FARMER FACTS" ke under listed kisi bhi information ke liye farmer se dobara mat poochiye.
+   Ye details complete aur verified hain.
+
+2. Hamesha apni recommendations ko strictly tailor karein:
+   - Provided location ke liye
+   - Provided soil type ke liye
+   - Provided water availability ke liye
+   - Upar listed crops ke liye
+
+3. Aisi crops, practices, inputs ya methods suggest mat kariye jo farmer ke location,
+   soil ya water conditions ke liye unsuitable hain.
+
+4. Follow-up question tabhi poochiye jab ye SABHI true hon:
+   a) Required information Known Farmer Facts mein present nahi hai
+   b) Missing information recommendation ko significantly change kar degi
+   c) Question ka answer ek short line mein diya ja sakta hai
+
+5. Agar information missing hai lekin non-critical hai:
+   - Chupchap ek reasonable regional assumption banaiye
+   - Response mein assumption ko clearly mention kariye
+
+6. Generic ya textbook explanations se bachiye.
+   Practical, region-specific aur actionable guidance provide kariye.
+
+7. Data, statistics, prices, schemes ya scientific claims ko hallucinate mat kariye.
+   Agar unsure hain, to guessing ke bajaye uncertainty ko clearly state kariye.
+
+8. Ek professional, respectful, farmer-friendly tone maintain kariye.
+
+9. Aapka objective relevance aur accuracy ko maximize karna hai jabki
+   unnecessary questions aur repetition ko minimize karna hai.
+
+Hinglish (Hindi-English mix) mein respond kariye."""
 }
 
 
@@ -185,6 +279,7 @@ class KrishiSaarthiAdvisor:
                 model=DEFAULT_OLLAMA_MODEL,
                 temperature=0.7,  # Balanced creativity
                 num_ctx=4096,  # Context window
+                num_predict=1500,  # Max output tokens (prevent JSON truncation)
                 base_url=DEFAULT_OLLAMA_BASE_URL,
             )
             print("✅ Ollama LLM initialized successfully")
@@ -269,15 +364,32 @@ KrishiSaarthi AI:"""
         Return ONLY a JSON array with this format:
         [
             {{
-                "id": "business_id",
-                "title": "Exact Title from list",
-                "reason": "Why this is a good fit (1 sentence)",
+                "id": "business_id_1",
+                "title": "Title 1",
+                "reason": "Reason 1",
                 "match_score": 95,
-                "estimated_cost": "Estimated cost string",
-                "profit_potential": "Estimated profit string",
+                "estimated_cost": "Cost 1",
+                "profit_potential": "Profit 1",
                 "requirements": ["Req 1", "Req 2"]
             }},
-            ...
+            {{
+                "id": "business_id_2",
+                "title": "Title 2",
+                "reason": "Reason 2",
+                "match_score": 90,
+                "estimated_cost": "Cost 2",
+                "profit_potential": "Profit 2",
+                "requirements": ["Req 1", "Req 2"]
+            }},
+            {{
+                "id": "business_id_3",
+                "title": "Title 3",
+                "reason": "Reason 3",
+                "match_score": 85,
+                "estimated_cost": "Cost 3",
+                "profit_potential": "Profit 3",
+                "requirements": ["Req 1", "Req 2"]
+            }}
         ]
         
         Do not add any markdown formatting (like ```json). Just the raw JSON string.
@@ -287,10 +399,28 @@ KrishiSaarthi AI:"""
             print("🤔 Generating recommendations...")
             response = self.llm.invoke(prompt)
             
-            # Clean response if it contains markdown
-            cleaned_response = re.sub(r'```json\s*|\s*```', '', response).strip()
+            # Robust JSON extraction
+            cleaned_response = response.strip()
             
-            recommendations = json.loads(cleaned_response)
+            # Remove markdown code fences
+            cleaned_response = re.sub(r'```json\s*|\s*```', '', cleaned_response)
+            
+            # Try to extract JSON array from text (in case LLM added explanation)
+            json_match = re.search(r'\[\s*\{.*\}\s*\]', cleaned_response, re.DOTALL)
+            if json_match:
+                cleaned_response = json_match.group(0)
+            
+            # Remove trailing commas before closing braces/brackets (common LLM error)
+            cleaned_response = re.sub(r',(\s*[}\]])', r'\1', cleaned_response)
+            
+            # Try to parse JSON
+            try:
+                recommendations = json.loads(cleaned_response)
+            except json.JSONDecodeError as json_err:
+                print(f"⚠️  JSON parse error: {json_err}")
+                print(f"📄 Raw response (first 500 chars): {response[:500]}")
+                print(f"🧹 Cleaned response (first 500 chars): {cleaned_response[:500]}")
+                raise  # Re-raise to trigger fallback
             
             # Ensure we strictly have 3 items and they match our ID list
             valid_ids = {b['id'] for b in BUSINESS_OPTIONS}

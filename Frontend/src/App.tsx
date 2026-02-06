@@ -1,4 +1,5 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AppProvider, useApp } from './contexts/AppContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 // New Pages & Components
@@ -12,70 +13,101 @@ import BusinessAdvisor from './pages/BusinessAdvisor';
 import GreenCredit from './pages/GreenCredit';
 import ValidatorDashboard from './pages/ValidatorDashboard'; // New
 import BuyerDashboard from './pages/BuyerDashboard';         // New
+import WasteToValue from './pages/WasteToValue';
+import Onboarding from './pages/Onboarding';
 
 // Placeholder Validator/Buyer (To be ported)
 // Placeholder Validator/Buyer (To be ported) - REMOVED
 
 function AppRoutes() {
-  return (
-    <Layout>
-      <Routes>
-        <Route path="/" element={<Landing />} />
-        <Route path="/login" element={<AuthPage type="login" />} />
-        <Route path="/signup" element={<AuthPage type="signup" />} />
+  const location = useLocation();
+  const isDashboardRoute = ['/farmer-dashboard', '/validator-dashboard', '/buyer-dashboard'].includes(location.pathname);
 
-        {/* Protected Routes */}
-        <Route
-          path="/farmer-dashboard"
-          element={
+  return (
+    <Routes>
+      {/* Dashboard Routes (No Layout) */}
+      <Route
+        path="/farmer-dashboard"
+        element={
+          <ProtectedRoute allowedRoles={['farmer']}>
+            <FarmerDashboard />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/validator-dashboard"
+        element={
+          <ProtectedRoute allowedRoles={['validator']}>
+            <ValidatorDashboard />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/buyer-dashboard"
+        element={
+          <ProtectedRoute allowedRoles={['buyer']}>
+            <BuyerDashboard />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Regular Routes (With Layout) */}
+      <Route path="/" element={<Layout><Landing /></Layout>} />
+      <Route path="/login" element={<Layout><AuthPage type="login" /></Layout>} />
+      <Route path="/signup" element={<Layout><AuthPage type="signup" /></Layout>} />
+
+      <Route
+        path="/onboarding"
+        element={
+          <Layout>
             <ProtectedRoute allowedRoles={['farmer']}>
-              <FarmerDashboard />
+              <Onboarding />
             </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/disease-detector"
-          element={
+          </Layout>
+        }
+      />
+      <Route
+        path="/disease-detector"
+        element={
+          <Layout>
             <ProtectedRoute allowedRoles={['farmer']}>
               <CropDiseaseDetector />
             </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/business-advisor"
-          element={
+          </Layout>
+        }
+      />
+      <Route
+        path="/business-advisor"
+        element={
+          <Layout>
             <ProtectedRoute allowedRoles={['farmer']}>
               <BusinessAdvisor />
             </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/green-credit"
-          element={
+          </Layout>
+        }
+      />
+      <Route
+        path="/green-credit"
+        element={
+          <Layout>
             <ProtectedRoute allowedRoles={['farmer']}>
               <GreenCredit />
             </ProtectedRoute>
-          }
-        />
+          </Layout>
+        }
+      />
 
-        <Route
-          path="/validator-dashboard"
-          element={
-            <ProtectedRoute allowedRoles={['validator']}>
-              <ValidatorDashboard />
+      <Route
+        path="/waste-to-value"
+        element={
+          <Layout>
+            <ProtectedRoute allowedRoles={['farmer']}>
+              <WasteToValue />
             </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/buyer-dashboard"
-          element={
-            <ProtectedRoute allowedRoles={['buyer']}>
-              <BuyerDashboard />
-            </ProtectedRoute>
-          }
-        />
-      </Routes>
-    </Layout>
+          </Layout>
+        }
+      />
+    </Routes>
   );
 }
 

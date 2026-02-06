@@ -23,6 +23,24 @@ interface User {
   age?: string;
   address?: string;
   scansCount?: number;
+  onboardingCompleted?: boolean;
+  signup_step?: 1 | 2 | 3;
+  signup_status?: 'in_progress' | 'completed';
+  createdAt?: string;
+  farmerProfile?: {
+    location: {
+      state: string;
+      district: string;
+      village: string;
+    };
+    landSize: {
+      value: number;
+      unit: string;
+    };
+    soilType: string;
+    waterAvailability: string;
+    crops: string[];
+  };
 }
 
 interface AppContextType {
@@ -36,6 +54,7 @@ interface AppContextType {
   t: (key: string) => string;
   loading: boolean;
   incrementScans: () => Promise<void>;
+  updateUserProfile: (data: Partial<User>) => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -415,9 +434,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
           const docRef = doc(db, 'users', currentUser.uid);
           const docSnap = await getDoc(docRef);
           if (docSnap.exists()) {
+            console.log('User found in Firestore:', docSnap.data());
             setUser(docSnap.data() as User);
           } else {
-            console.error('User document does not exist');
+            console.error('User document does not exist in Firestore for uid:', currentUser.uid);
             setUser(null);
           }
         } catch (error) {
@@ -425,6 +445,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           setUser(null);
         }
       } else {
+        console.log('No current user in onAuthStateChanged');
         setUser(null);
       }
       setLoading(false);
@@ -434,30 +455,33 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const login = async (mobile: string, password: string, expectedRole?: UserRole) => {
     try {
-      const email = mobile.includes('@') ? mobile : `${mobile}@krishisaarthi.com`;
+      // Sanitize mobile: remove all spaces
+      const cleanMobile = mobile.replace(/\s/g, '');
+      const email = cleanMobile.includes('@') ? cleanMobile : `${cleanMobile}@krishisaarthi.com`;
+      console.log('Attempting login with:', email);
+
       const result = await signInWithEmailAndPassword(auth, email, password);
 
-      // Strict Role Enforcement
-      if (expectedRole) {
-        const docRef = doc(db, 'users', result.user.uid);
-        const docSnap = await getDoc(docRef);
+      // Always fetch user profile to ensure state is updated immediately
+      const docRef = doc(db, 'users', result.user.uid);
+      const docSnap = await getDoc(docRef);
 
-        if (docSnap.exists()) {
-          const userData = docSnap.data() as User;
-          if (userData.role !== expectedRole) {
-            await signOut(auth);
-            throw new Error(`Role mismatch: Expected ${expectedRole}, found ${userData.role}`);
-          }
-          // Update local state immediately to avoid lag
-          setUser(userData);
-        } else {
-          // If user exists in Auth but not in Firestore (rare edge case or corrupted data)
-          // We might want to let them in or block. Safe default is block or treat as error.
-          // For now, let's allow it but warn, or maybe block?
-          // User requested strict auth. If no role found, they can't be verified.
+      if (docSnap.exists()) {
+        const userData = docSnap.data() as User;
+
+        // Strict Role Enforcement
+        if (expectedRole && userData.role !== expectedRole) {
           await signOut(auth);
-          throw new Error('User data not found');
+          throw new Error(`Role mismatch: Expected ${expectedRole}, found ${userData.role}`);
         }
+
+        // Update local state immediately
+        console.log('Login successful, updating user state:', userData);
+        setUser(userData);
+      } else {
+        console.error('User document not found in Firestore during login');
+        await signOut(auth);
+        throw new Error('User profile not found. Please contact support.');
       }
     } catch (error) {
       console.error('Login error:', error);
@@ -467,12 +491,25 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const signup = async (userData: any, password: string) => {
     try {
-      const email = `${userData.mobile}@krishisaarthi.com`;
+      // Sanitize mobile
+      const cleanMobile = userData.mobile.replace(/\s/g, '');
+      userData.mobile = cleanMobile; // Update the object to save clean format
+
+      const email = `${cleanMobile}@krishisaarthi.com`;
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
 
+      // Create minimal user document - onboarding will handle the rest for farmers
       const newUser: User = {
         id: userCredential.user.uid,
-        ...userData
+        name: userData.name,
+        mobile: cleanMobile,
+        role: userData.role,
+        age: userData.age,
+        address: userData.address,
+        createdAt: new Date().toISOString(),
+        onboardingCompleted: userData.role !== 'farmer', // Only farmers need onboarding
+        signup_step: userData.role === 'farmer' ? 1 : undefined,
+        signup_status: userData.role === 'farmer' ? 'in_progress' : undefined,
       };
 
       await setDoc(doc(db, 'users', userCredential.user.uid), newUser);
@@ -499,6 +536,18 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const updateUserProfile = async (data: Partial<User>) => {
+    if (!user) return;
+    try {
+      const userRef = doc(db, 'users', user.id);
+      await setDoc(userRef, data, { merge: true });
+      setUser({ ...user, ...data });
+    } catch (error) {
+      console.error('Error updating user profile:', error);
+      throw error;
+    }
+  };
+
   const logout = async () => {
     try {
       await signOut(auth);
@@ -509,7 +558,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AppContext.Provider value={{ language, setLanguage, user, setUser, logout, login, signup, t, loading, incrementScans }}>
+    <AppContext.Provider value={{ language, setLanguage, user, setUser, logout, login, signup, t, loading, incrementScans, updateUserProfile }}>
       {loading ? (
         <div className="flex h-screen w-full items-center justify-center bg-gray-50 dark:bg-gray-900">
           <div className="flex flex-col items-center gap-4">

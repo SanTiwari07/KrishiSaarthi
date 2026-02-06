@@ -282,20 +282,22 @@ export default function Layout({ children }: { children?: React.ReactNode }) {
         {children}
       </main >
 
-      {/* Footer */}
-      < footer className="bg-white/50 dark:bg-gray-900/50 backdrop-blur-lg border-t border-gray-200 dark:border-gray-800 mt-auto" >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-          <div className="flex flex-col md:flex-row justify-between items-center">
-            <div className="mb-6 md:mb-0 text-center md:text-left">
-              <span className="text-2xl font-bold text-primary">{t('app.name')}</span>
-              <p className="text-base text-gray-500 dark:text-gray-400 mt-2">{t('app.tagline')}</p>
+      {/* Footer - Hide on Business Advisor and Waste-to-Value pages */}
+      {!location.pathname.includes('business-advisor') && !location.pathname.includes('waste-to-value') && (
+        <footer className="bg-white/50 dark:bg-gray-900/50 backdrop-blur-lg border-t border-gray-200 dark:border-gray-800 mt-auto">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+            <div className="flex flex-col md:flex-row justify-between items-center">
+              <div className="mb-6 md:mb-0 text-center md:text-left">
+                <span className="text-2xl font-bold text-primary">{t('app.name')}</span>
+                <p className="text-base text-gray-500 dark:text-gray-400 mt-2">{t('app.tagline')}</p>
+              </div>
+            </div>
+            <div className="mt-10 text-center text-sm text-gray-400">
+              © {new Date().getFullYear()} KrishiSaarthi.
             </div>
           </div>
-          <div className="mt-10 text-center text-sm text-gray-400">
-            © {new Date().getFullYear()} KrishiSaarthi.
-          </div>
-        </div>
-      </footer >
+        </footer>
+      )}
     </div >
   );
 }

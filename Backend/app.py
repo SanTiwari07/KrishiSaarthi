@@ -23,6 +23,15 @@ for path in (BUSINESS_ADVISOR_DIR, DISEASE_DETECTOR_DIR):
 from krishi_chatbot import KrishiSaarthiAdvisor, FarmerProfile
 from detector import predict as detector_predict
 
+# Add WasteToValue Code
+WASTE_TO_VALUE_DIR = Path(__file__).resolve().parent / 'services' / 'WasteToValue' / 'src'
+if str(WASTE_TO_VALUE_DIR) not in sys.path:
+    sys.path.append(str(WASTE_TO_VALUE_DIR))
+
+from waste_service import WasteToValueEngine
+waste_engine = WasteToValueEngine() # Initialize singleton
+
+
 app = Flask(__name__)
 CORS(app)  # Enable CORS for frontend
 
@@ -187,7 +196,7 @@ def init_advisor():
     try:
         data = request.json
         
-        # Create farmer profile
+        # Create farmer profile with enhanced fields
         profile = FarmerProfile(
             name=data.get('name', 'Farmer'),
             land_size=float(data.get('land_size', 5.0)),
@@ -201,7 +210,17 @@ def init_advisor():
             selling_preference=data.get('selling_preference'),
             recovery_timeline=data.get('recovery_timeline'),
             loss_tolerance=data.get('loss_tolerance'),
-            risk_preference=data.get('risk_preference')
+            risk_preference=data.get('risk_preference'),
+            # New Agricultural Decision Intelligence fields
+            age=data.get('age'),
+            role=data.get('role', 'farmer'),
+            state=data.get('state'),
+            district=data.get('district'),
+            village=data.get('village'),
+            soil_type=data.get('soil_type'),
+            water_availability=data.get('water_availability'),
+            crops_grown=data.get('crops_grown', []),
+            land_unit=data.get('land_unit', 'acres')
         )
         
         # Create advisor instance
@@ -299,6 +318,44 @@ def integrated_advice():
         })
     
     except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/waste-to-value/analyze', methods=['POST'])
+def analyze_waste():
+    """Analyze crop waste using LLM"""
+    try:
+        data = request.json
+        crop = data.get('crop')
+        if not crop:
+            return jsonify({'error': 'Crop name is required'}), 400
+            
+        result = waste_engine.analyze_waste(crop)
+        return jsonify({
+            'success': True,
+            'result': result
+        })
+    except Exception as e:
+        print(f"Server Error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/waste-to-value/chat', methods=['POST'])
+def chat_waste_api():
+    """Chat with the waste assistant"""
+    try:
+        data = request.json
+        context = data.get('context')
+        question = data.get('question')
+        
+        if not context or not question:
+            return jsonify({'error': 'Context and question are required'}), 400
+            
+        response = waste_engine.chat_waste(context, question)
+        return jsonify({
+            'success': True,
+            'response': response
+        })
+    except Exception as e:
+        print(f"Chat Server Error: {e}")
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/business-advisor/sessions/<session_id>', methods=['DELETE'])

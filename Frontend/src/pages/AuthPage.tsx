@@ -10,7 +10,9 @@ export default function AuthPage({ type }: { type: 'login' | 'signup' }) {
     const navigate = useNavigate();
 
     useEffect(() => {
+        console.log('AuthPage useEffect: authLoading=', authLoading, 'user=', user);
         if (!authLoading && user) {
+            console.log('Redirecting based on role:', user.role);
             if (user.role === 'farmer') navigate('/farmer-dashboard');
             else if (user.role === 'validator') navigate('/validator-dashboard');
             else navigate('/buyer-dashboard');
@@ -35,45 +37,49 @@ export default function AuthPage({ type }: { type: 'login' | 'signup' }) {
             if (type === 'login') {
                 await login(phone, password);
                 toast.success(t('auth.success.login'));
-                // Redirect logic is handled by the useEffect for auth state change ideally,
-                // but direct navigation is fine for now as user state updates.
-                // However, we need to know the Role. 
-                // Since login updates state asynchronously, we might Rely on onAuthStateChanged in AppContext
-                // but we can try to navigate here if we knew the role.
-                // The Fetch is async in AppContext. 
-                // A better approach is to redirect inside a useEffect in App.tsx or ProtectedRoute, 
-                // but for now, let's wait a moment or let 'user' be updated.
-                // Actually, since login() awaits the fetch, 'user' might be ready if we used flushSync? No.
-                // We'll trust the user state.
-
-                // Hack: We don't have the user object here immediately after await unless login returns it.
-                // We can't easily redirect to the correct dashboard without fetching user role.
-                // Since AppContext fetches data, we might need to wait or rely on a "dashboard" element redirecting.
-                // Let's navigate to home for now or specific dashboard if we assume.
-                // Actually, let's fetch user again or return user from login.
-                navigate('/farmer-dashboard'); // Default fallback, but App should really route based on user.
             } else {
-                const userData = {
-                    name,
-                    mobile: phone,
-                    role,
-                    age,
-                    address,
-                    createdAt: new Date().toISOString()
-                };
-                await signup(userData, password);
-                toast.success(t('auth.success.signup'));
-                if (role === 'farmer') navigate('/farmer-dashboard');
-                else if (role === 'validator') navigate('/validator-dashboard');
-                else navigate('/buyer-dashboard');
+                // For farmers: only create auth account, onboarding will collect personal info
+                if (role === 'farmer') {
+                    const userData = {
+                        name: 'Farmer', // Temporary, will be updated in onboarding
+                        mobile: phone,
+                        role,
+                        age: '0', // Temporary
+                        address: '', // Temporary
+                        createdAt: new Date().toISOString()
+                    };
+                    await signup(userData, password);
+                    toast.success(t('auth.success.signup'));
+                    navigate('/onboarding');
+                } else {
+                    // For validators and buyers: collect full info during signup
+                    const userData = {
+                        name,
+                        mobile: phone,
+                        role,
+                        age,
+                        address,
+                        createdAt: new Date().toISOString()
+                    };
+                    await signup(userData, password);
+                    toast.success(t('auth.success.signup'));
+                    if (role === 'validator') navigate('/validator-dashboard');
+                    else navigate('/buyer-dashboard');
+                }
             }
         } catch (error: any) {
-            console.error(error);
-            // Firebase Error codes mapping could be added here
+            console.error('Full Login Error:', error);
+            // Firebase Error codes mapping
             let msg = t('auth.error.failed');
             if (error.code === 'auth/user-not-found') msg = t('auth.error.user_not_found');
             if (error.code === 'auth/wrong-password') msg = t('auth.error.wrong_password');
             if (error.code === 'auth/email-already-in-use') msg = t('auth.error.email_in_use');
+            if (error.code === 'auth/invalid-email') msg = 'Invalid mobile number format';
+            if (error.message) {
+                // If it's a custom error (like Role mismatch or Profile not found)
+                if (error.message.includes('Role mismatch')) msg = 'Incorrect Role selected for this user';
+                if (error.message.includes('User profile not found')) msg = 'User profile missing. Contact support.';
+            }
             toast.error(msg);
         } finally {
             setLoading(false);
@@ -133,7 +139,7 @@ export default function AuthPage({ type }: { type: 'login' | 'signup' }) {
                         )}
 
                         <div className="space-y-5">
-                            {type === 'signup' && (
+                            {type === 'signup' && role !== 'farmer' && (
                                 <div>
                                     <label htmlFor="name" className="block text-base font-semibold text-gray-700 dark:text-gray-300 mb-2">{t('full.name')}</label>
                                     <input
@@ -166,7 +172,7 @@ export default function AuthPage({ type }: { type: 'login' | 'signup' }) {
                                 </div>
                             </div>
 
-                            {type === 'signup' && (
+                            {type === 'signup' && role !== 'farmer' && (
                                 <>
                                     <div>
                                         <label htmlFor="age" className="block text-base font-semibold text-gray-700 dark:text-gray-300 mb-2">{t('age')}</label>

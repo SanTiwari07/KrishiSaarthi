@@ -34,7 +34,7 @@ const Wrapper = ({ children }: { children: React.ReactNode }) => {
 
 
 export default function BusinessAdvisor() {
-    const { t, language } = useApp();
+    const { t, language, user } = useApp();
     const navigate = useNavigate();
     const location = useLocation();
     const [view, setView] = useState<View>('intro');
@@ -102,8 +102,19 @@ export default function BusinessAdvisor() {
         }
     }, [t, fromDiseaseDetector]);
 
-    const scrollToBottom = () => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    useEffect(scrollToBottom, [messages]);
+    const scrollToBottom = () => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    };
+
+    // Only scroll to bottom when NEW messages are added, not on every update
+    const prevMessageCountRef = useRef(messages.length);
+    useEffect(() => {
+        // Only scroll if message count increased (new message added)
+        if (messages.length > prevMessageCountRef.current) {
+            scrollToBottom();
+        }
+        prevMessageCountRef.current = messages.length;
+    }, [messages]);
 
     // Handle Pending Context Trigger
     useEffect(() => {
@@ -142,7 +153,11 @@ export default function BusinessAdvisor() {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    name: 'Farmer',
+                    name: user?.name || 'Farmer',
+                    age: user?.age ? parseInt(user.age) : undefined,
+                    state: user?.farmerProfile?.location?.state,
+                    district: user?.farmerProfile?.location?.district,
+                    village: user?.farmerProfile?.location?.village,
                     land_size: parseFloat(formData.land) || 5.0,
                     capital: parseFloat(formData.budget) || 100000,
                     market_access: formData.marketAccess || 'moderate',
@@ -184,7 +199,11 @@ export default function BusinessAdvisor() {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    name: 'Farmer',
+                    name: user?.name || 'Farmer',
+                    age: user?.age ? parseInt(user.age) : undefined,
+                    state: user?.farmerProfile?.location?.state,
+                    district: user?.farmerProfile?.location?.district,
+                    village: user?.farmerProfile?.location?.village,
                     language: language === 'hi' ? 'hindi' : language === 'mr' ? 'marathi' : 'english'
                 })
             });
@@ -233,20 +252,33 @@ export default function BusinessAdvisor() {
         const textToSend = textOverride || chatInput;
         if (!textToSend.trim()) return;
 
+        // Local variable to handle async state update
+        let currentSessionId = sessionId;
+
         // If no session, try to init one silently (or handle error)
-        if (!sessionId) {
+        if (!currentSessionId) {
             try {
                 const res = await fetch(`${API_BASE_URL}/business-advisor/init`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        name: 'Farmer',
+                        name: user?.name || 'Farmer',
+                        age: user?.age ? parseInt(user.age) : undefined,
+                        state: user?.farmerProfile?.location?.state,
+                        district: user?.farmerProfile?.location?.district,
+                        village: user?.farmerProfile?.location?.village,
                         language: language === 'hi' ? 'hindi' : language === 'mr' ? 'marathi' : 'english'
                     })
                 });
+
                 const d = await res.json();
-                setSessionId(d.session_id);
-            } catch (e) { console.error(e); }
+                currentSessionId = d.session_id; // Capture for immediate use
+                setSessionId(d.session_id);      // Update state for next render
+            } catch (e) {
+                console.error(e);
+                setMessages(prev => [...prev, { id: 'err', sender: 'ai', text: 'Error initializing session. Please try again.', timestamp: new Date() }]);
+                return;
+            }
         }
 
         const userMsg: ChatMessage = {
@@ -276,7 +308,7 @@ export default function BusinessAdvisor() {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    session_id: sessionId,
+                    session_id: currentSessionId,
                     message: finalMessage
                 })
             });
@@ -302,6 +334,11 @@ export default function BusinessAdvisor() {
 
     const startBusinessChat = (businessId: string) => {
         const business = BUSINESS_DETAILS[businessId];
+
+        // Clear previous session data to prevent context contamination
+        setSessionId(null);
+        setMessages([]);
+
         if (business) {
             // Construct a data string from the sections
             const dataString = business.sections.map(s => `${s.title[language] || s.title['en']}:\n${(s.content[language] || s.content['en']).join('\n')}`).join('\n\n');
@@ -728,8 +765,8 @@ export default function BusinessAdvisor() {
 
     if (view === 'chat') {
         return (
-            <Wrapper>
-                <div className="flex items-center justify-between mb-4">
+            <div className="flex flex-col h-[calc(100vh-6rem)] max-w-7xl mx-auto px-4 pt-4 pb-4">
+                <div className="flex items-center justify-between mb-4 flex-shrink-0">
                     {fromDiseaseDetector ? (
                         <button onClick={() => navigate(-1)} className="text-gray-500 hover:text-primary flex items-center gap-2 font-bold text-lg transition-colors">
                             <ArrowLeft size={24} /> {t('back.to.results')}
@@ -745,7 +782,7 @@ export default function BusinessAdvisor() {
                     </div>
                 </div>
 
-                <div className="flex flex-col h-[700px] bg-white dark:bg-gray-800 rounded-[2rem] shadow-2xl border border-gray-100 dark:border-gray-700 overflow-hidden relative">
+                <div className="flex flex-col flex-grow bg-white dark:bg-gray-800 rounded-[2rem] shadow-2xl border border-gray-100 dark:border-gray-700 overflow-hidden relative">
                     {/* Chat Header */}
                     <div className="bg-white/80 dark:bg-gray-800/90 backdrop-blur-md p-6 border-b border-gray-100 dark:border-gray-700 absolute top-0 left-0 right-0 z-10 flex items-center gap-4">
                         <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
@@ -827,12 +864,12 @@ export default function BusinessAdvisor() {
                                 {isLoading && <Loader2 size={20} className="absolute animate-spin" />}
                             </button>
                         </div>
-                        <p className="text-center text-xs text-gray-400 mt-3 font-medium">
+                        <p className="text-center text-xs text-gray-400 mt-3 pt-3 font-medium border-t border-gray-200 dark:border-gray-700">
                             {t('ai.disclaimer')}
                         </p>
                     </div>
                 </div>
-            </Wrapper>
+            </div>
         );
     }
 
