@@ -15,32 +15,54 @@ class WasteToValueEngine:
             model=model_name,
             temperature=0.2,
             format="json",
-            base_url=base_url
+            base_url=base_url,
+            num_predict=3072
         )
         
         # Separate LLM for chat (No JSON enforcement)
         self.chat_llm = ChatOllama(
             model=model_name,
             temperature=0.4,
-            base_url=base_url
+            base_url=base_url,
+            num_predict=2048
         )
 
-        self.prompt = ChatPromptTemplate.from_messages([
-            ("system", WASTE_TO_VALUE_SYSTEM_PROMPT + "\n" + GUARDRAIL_PROMPT),
-            ("human", "{input}"),
-        ])
-        self.chain = self.prompt | self.llm | JsonOutputParser()
-
-    def analyze_waste(self, crop_name: str) -> dict:
+    def analyze_waste(self, crop_name: str, language: str = "English") -> dict:
         """
         Analyzes the crop waste and returns structured JSON recommendations.
         """
+        prompt = ChatPromptTemplate.from_messages([
+            ("system", WASTE_TO_VALUE_SYSTEM_PROMPT + "\n" + GUARDRAIL_PROMPT),
+            ("human", "{input}"),
+        ])
+        chain = prompt | self.llm | JsonOutputParser()
+
         try:
-            print(f"🥦 WasteToValueEngine: Analyzing {crop_name}...")
-            response = self.chain.invoke({"input": crop_name})
-            return response
+            print("\n" + "="*60)
+            print(f"🥦 WASTE-TO-VALUE ANALYSIS ({language})")
+            print("="*60)
+            print(f"🌾 Crop: {crop_name}")
+            print("🔄 Invoking LLM for waste analysis...")
+            
+            response = chain.invoke({"input": crop_name, "language": language})
+            
+            # Accuracy Sanity Check
+            self._validate_results(response)
+            
+            print(f"✅ LLM Response Received & Validated")
+            print(f"📊 Options Generated: {len(response.get('options', []))}")
+            if response.get('conclusion'):
+                print(f"🎯 Recommendation: {response['conclusion'].get('title', 'N/A')}")
+            print("="*60 + "\n")
+            
+            # Map to legacy schema for frontend compatibility
+            legacy_response = self._map_to_legacy_schema(response)
+            
+            return legacy_response
         except Exception as e:
             print(f"❌ Error in WasteToValueEngine: {e}")
+            import traceback
+            traceback.print_exc()
             # Fallback/Error response structure
             return {
                 "crop": crop_name,
@@ -52,7 +74,75 @@ class WasteToValueEngine:
                 "error": str(e)
             }
 
-    def chat_waste(self, context: dict, user_question: str) -> str:
+    def _map_to_legacy_schema(self, response: dict) -> dict:
+        """Maps the flattened LLM output back to the nested legacy schema for the frontend"""
+        legacy_options = []
+        for opt in response.get("options", []):
+            section_titles = [
+                "Plant Part", "Pathway Type", "Technical Basis", 
+                "Manufacturing Option (DIY)", "3rd-Party Selling Option", 
+                "Average Recovery Value", "Value Recovery Percentage", 
+                "Equipment Needed", "Action Urgency"
+            ]
+            
+            sections = []
+            for title in section_titles:
+                sections.append({
+                    "title": title,
+                    "content": opt.get(title, ["N/A"])
+                })
+            
+            legacy_opt = {
+                "id": opt.get("id"),
+                "title": opt.get("title"),
+                "subtitle": opt.get("subtitle"),
+                "fullDetails": {
+                    "title": opt.get("title"),
+                    "basicIdea": opt.get("basicIdea", []),
+                    "sections": sections
+                }
+            }
+            legacy_options.append(legacy_opt)
+        
+        # Post-process conclusion highlight to ensure it matches one of the options
+        conclusion = response.get("conclusion", {})
+        highlight = conclusion.get("highlight", "")
+        option_titles = [opt["title"] for opt in legacy_options]
+        
+        # Try to find a match between the highlight and the option titles
+        matched_title = next((t for t in option_titles if t.lower() in highlight.lower() or highlight.lower() in t.lower()), option_titles[0] if option_titles else "N/A")
+        
+        # Replace highlight with the actual matched title to ensure frontend consistency
+        conclusion["highlight"] = matched_title
+        
+        return {
+            "crop": response.get("crop"),
+            "conclusion": conclusion,
+            "options": legacy_options
+        }
+
+    def _validate_results(self, response: dict):
+        """Internal sanity check for accuracy and technical depth"""
+        options = response.get("options", [])
+        for opt in options:
+            # Check for price realism
+            price_content = opt.get("Average Recovery Value", [])
+            if price_content:
+                content_str = " ".join(price_content)
+                if "₹" not in content_str and "INR" not in content_str.upper():
+                    print(f"⚠️ Warning: Missing currency in price for {opt.get('title')}")
+            
+            # Check for technical depth
+            tech_content = opt.get("Technical Basis", [])
+            if tech_content:
+                content_str = " ".join(tech_content).lower()
+                if "n/a" in content_str or "none" in content_str or "..." in content_str:
+                    print(f"⚠️ Warning: Weak technical basis for {opt.get('title')}")
+        
+        if len(options) < 1:
+            raise ValueError("Generated 0 options; LLM failed to provide valid recommendations.")
+
+    def chat_waste(self, context: dict, user_question: str, language: str = "English") -> str:
         """
         Answers user questions based on the detailed waste analysis context.
         """
@@ -61,10 +151,11 @@ class WasteToValueEngine:
             The user has just received an analysis for converting specific crop waste into value.
             
             CONTEXT (The analysis results):
-            {context_str}
+            {{context_str}}
             
             YOUR GOAL:
             Answer the user's question specifically based on the options provided in the context.
+            Respond in the specified LANGUAGE: {language}.
             
             FORMATTING RULES:
             - Use **Bold** for key numbers, machine names, and prices.
@@ -82,18 +173,31 @@ class WasteToValueEngine:
         from langchain_core.output_parsers import StrOutputParser
         
         # Use the non-JSON chat LLM
-        chat_chain = chat_prompt | self.chat_llm | StrOutputParser()
+        chat_chain = chat_prompt.partial(language=language) | self.chat_llm | StrOutputParser()
         
         try:
             # Convert context dict to a readable string
             context_str = json.dumps(context, indent=2)
             
-            print(f"💬 Chatting about waste... Q: {user_question}")
+            print("\n" + "="*60)
+            print(f"💬 WASTE-TO-VALUE CHAT ({language})")
+            print("="*60)
+            print(f"💭 User Question: {user_question}")
+            print(f"📚 Context Size: {len(context_str)} chars")
+            print("🔄 Invoking LLM for chat response...")
+            
             response = chat_chain.invoke({
                 "context_str": context_str, 
                 "question": user_question
             })
+            
+            print(f"✅ LLM Response Received ({len(response)} chars)")
+            print(f"📤 Response Preview: {response[:150]}..." if len(response) > 150 else f"📤 Full Response: {response}")
+            print("="*60 + "\n")
+            
             return response
         except Exception as e:
             print(f"❌ Error in Waste Chat: {e}")
+            import traceback
+            traceback.print_exc()
             return "I apologize, but I'm having trouble connecting to the knowledge base right now. Please try again."

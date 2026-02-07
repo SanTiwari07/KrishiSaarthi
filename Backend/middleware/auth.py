@@ -32,8 +32,10 @@ def require_auth(f):
     """Decorator to require Firebase Auth ID Token"""
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        # Skip auth if in strict debug mode AND explicitly allowed (not recommended for production)
-        # For now, we enforce it.
+        # Allow OPTIONS requests (CORS preflight) to pass through without auth
+        # Return empty response - Flask-CORS will add the CORS headers
+        if request.method == 'OPTIONS':
+            return '', 200
         
         auth_header = request.headers.get('Authorization')
         if not auth_header:

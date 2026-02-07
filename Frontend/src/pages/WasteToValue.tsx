@@ -84,7 +84,10 @@ export default function WasteToValue() {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
                 },
-                body: JSON.stringify({ crop: cropInput }),
+                body: JSON.stringify({
+                    crop: cropInput,
+                    language: language === 'hi' ? 'Hindi' : language === 'mr' ? 'Marathi' : 'English'
+                }),
             });
 
             if (!response.ok) {
@@ -132,7 +135,8 @@ export default function WasteToValue() {
                 },
                 body: JSON.stringify({
                     context: resultData,
-                    question: chatInput
+                    question: chatInput,
+                    language: language === 'hi' ? 'Hindi' : language === 'mr' ? 'Marathi' : 'English'
                 }),
             });
 
@@ -180,8 +184,8 @@ export default function WasteToValue() {
                                 <Recycle size={32} className="text-white" />
                             </div>
                         </div>
-                        <h1 className="text-3xl font-extrabold mb-2">Waste to Value Analysis</h1>
-                        <p className="opacity-90 text-lg">Turn your crop residues into a profitable business.</p>
+                        <h1 className="text-3xl font-extrabold mb-2">{t('waste.to.value.analysis')}</h1>
+                        <p className="opacity-90 text-lg">{t('waste.to.value.desc')}</p>
                     </div>
 
                     <div className="p-8 md:p-12">
@@ -189,20 +193,20 @@ export default function WasteToValue() {
                             {/* Simple Text Input */}
                             <div>
                                 <label className="block text-xl font-bold text-gray-700 dark:text-gray-200 mb-4 flex items-center gap-2">
-                                    <Leaf className="text-green-500" /> What waste do you have?
+                                    <Leaf className="text-green-500" /> {t('waste.question')}
                                 </label>
                                 <div className="relative">
                                     <input
                                         type="text"
                                         required
-                                        placeholder="e.g. Banana stem, Sugarcane bagasse, Wheat straw..."
+                                        placeholder={t('waste.placeholder')}
                                         className="w-full p-6 pl-14 text-xl bg-gray-50 dark:bg-gray-900 border-2 border-gray-200 dark:border-gray-700 rounded-2xl focus:ring-4 focus:ring-green-500/20 focus:border-green-500 outline-none transition-all placeholder-gray-400"
                                         value={cropInput}
                                         onChange={(e) => setCropInput(e.target.value)}
                                     />
                                     <Search className="absolute top-1/2 left-5 -translate-y-1/2 text-gray-400" size={24} />
                                 </div>
-                                <p className="mt-3 text-gray-500 text-sm ml-2">Our AI will analyze the best profitable uses for your specific crop waste.</p>
+                                <p className="mt-3 text-gray-500 text-sm ml-2">{t('waste.helper')}</p>
                             </div>
 
                             <button
@@ -210,7 +214,7 @@ export default function WasteToValue() {
                                 disabled={!cropInput.trim()}
                                 className="w-full py-5 bg-green-600 hover:bg-green-700 text-white text-xl font-bold rounded-2xl shadow-lg hover:shadow-green-500/30 hover:-translate-y-1 transition-all flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
-                                Analyze with AI <ChevronRight size={24} />
+                                {t('analyze.ai')} <ChevronRight size={24} />
                             </button>
                         </form>
                     </div>
@@ -228,13 +232,13 @@ export default function WasteToValue() {
                     <Recycle className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-green-600" size={32} />
                 </div>
                 <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-8 mb-4 flex items-center gap-2 justify-center">
-                    Analyzing <span className="text-green-600">{cropInput}</span>...
+                    {t('analyzing.crop').replace('{crop}', cropInput)}
                 </h2>
                 <div className="max-w-md space-y-4">
                     <div className="h-2 w-64 bg-gray-200 rounded-full mx-auto overflow-hidden">
                         <div className="h-full bg-green-600 rounded-full animate-progress-indeterminate"></div>
                     </div>
-                    <p className="text-gray-500 dark:text-gray-400 animate-pulse text-sm">Identifying chemical composition...</p>
+                    <p className="text-gray-500 dark:text-gray-400 animate-pulse text-sm">{t('identifying.composition')}</p>
                 </div>
             </div>
         );
@@ -252,9 +256,9 @@ export default function WasteToValue() {
                 </button>
                 <div>
                     <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white flex items-center gap-2">
-                        <Recycle className="text-green-600" /> Waste → Value
+                        <Recycle className="text-green-600" /> {t('waste.to.value')}
                     </h1>
-                    <p className="text-gray-500 dark:text-gray-400">Transforming <strong>{resultData.crop}</strong> waste into profit</p>
+                    <p className="text-gray-500 dark:text-gray-400">{t('transforming.crop.profit').replace('{crop}', resultData.crop)}</p>
                 </div>
             </div>
 
@@ -287,7 +291,7 @@ export default function WasteToValue() {
             <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-3xl p-8 border border-green-100 dark:border-green-800 relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-64 h-64 bg-green-200/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3"></div>
                 <h2 className="text-2xl font-bold text-green-900 dark:text-green-100 mb-4 flex items-center gap-2 relative z-10">
-                    <Leaf className="text-green-600 dark:text-green-400" /> Conclusion
+                    <Leaf className="text-green-600 dark:text-green-400" /> {t('conclusion')}
                 </h2>
                 <div className="bg-white/60 dark:bg-black/20 backdrop-blur-sm rounded-2xl p-6 border border-green-100 dark:border-green-800/50 relative z-10">
                     <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3">
@@ -312,8 +316,8 @@ export default function WasteToValue() {
                         <MessageSquare className="text-green-600 dark:text-green-400" size={24} />
                     </div>
                     <div>
-                        <h3 className="font-bold text-xl text-gray-900 dark:text-white">Waste-to-Value Assistant</h3>
-                        <p className="text-sm text-gray-500 font-medium">Ask anything about the above recommendations</p>
+                        <h3 className="font-bold text-xl text-gray-900 dark:text-white">{t('assistant.title')}</h3>
+                        <p className="text-sm text-gray-500 font-medium">{t('assistant.desc')}</p>
                     </div>
                 </div>
 
@@ -363,7 +367,7 @@ export default function WasteToValue() {
                             value={chatInput}
                             onChange={(e) => setChatInput(e.target.value)}
                             onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-                            placeholder="Type your question here..."
+                            placeholder={t('type.question')}
                             className="flex-grow p-4 bg-gray-100 dark:bg-gray-900 rounded-xl border-none focus:ring-2 focus:ring-green-500 outline-none transition-all"
                             disabled={isChatLoading}
                         />
@@ -383,13 +387,19 @@ export default function WasteToValue() {
 
             {/* Know More Modal */}
             {selectedOption && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-                    <div className="bg-white dark:bg-gray-800 w-full max-w-4xl max-h-[90vh] rounded-3xl shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-200">
+                <div
+                    className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/70 backdrop-blur-md transition-all"
+                    onClick={() => setSelectedOption(null)}
+                >
+                    <div
+                        className="bg-white dark:bg-gray-800 w-full max-w-4xl max-h-[90vh] rounded-[2rem] shadow-2xl border border-gray-100 dark:border-gray-700 overflow-hidden flex flex-col"
+                        onClick={(e) => e.stopPropagation()}
+                    >
                         {/* Header */}
-                        <div className="p-6 border-b border-gray-100 dark:border-gray-700 flex justify-between items-start bg-gray-50 dark:bg-gray-900/50">
+                        <div className="p-6 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center bg-gray-50 dark:bg-gray-900/50">
                             <div>
                                 <h3 className="text-2xl font-bold text-gray-900 dark:text-white leading-tight">
-                                    {selectedOption.fullDetails?.title || selectedOption.title}
+                                    {(selectedOption.fullDetails?.title || selectedOption.full_details?.title) || selectedOption.title}
                                 </h3>
                             </div>
                             <button
@@ -401,15 +411,15 @@ export default function WasteToValue() {
                         </div>
 
                         {/* Scrollable Content */}
-                        <div className="p-8 overflow-y-auto space-y-8">
+                        <div className="p-8 overflow-y-auto space-y-8 custom-scrollbar">
                             {/* Basic Idea - Only show if available */}
-                            {selectedOption.fullDetails?.basicIdea?.length > 0 && (
+                            {((selectedOption.fullDetails?.basicIdea?.length > 0) || (selectedOption.full_details?.basicIdea?.length > 0)) && (
                                 <div className="bg-green-50 dark:bg-green-900/20 p-6 rounded-2xl border border-green-100 dark:border-green-800">
                                     <h4 className="text-lg font-bold text-green-800 dark:text-green-300 mb-3 flex items-center gap-2">
-                                        <Info size={20} /> BASIC IDEA
+                                        <Info size={20} /> {t('basic.idea')}
                                     </h4>
                                     <ul className="list-disc list-inside space-y-2 text-gray-700 dark:text-gray-300 text-lg">
-                                        {selectedOption.fullDetails.basicIdea.map((line: string, idx: number) => (
+                                        {(selectedOption.fullDetails?.basicIdea || selectedOption.full_details?.basicIdea).map((line: string, idx: number) => (
                                             <li key={idx}>{line}</li>
                                         ))}
                                     </ul>
@@ -417,16 +427,17 @@ export default function WasteToValue() {
                             )}
 
                             {/* Key Details Grid */}
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                {selectedOption.fullDetails?.sections?.map((section: any, idx: number) => (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-4">
+                                {(selectedOption.fullDetails?.sections || selectedOption.full_details?.sections)?.map((section: any, idx: number) => (
                                     <div key={idx} className="bg-gray-50 dark:bg-gray-700/30 p-5 rounded-2xl border border-gray-100 dark:border-gray-700">
-                                        <h5 className="font-bold text-gray-900 dark:text-white mb-3 uppercase text-sm tracking-wider border-b border-gray-200 dark:border-gray-600 pb-2">
+                                        <h5 className="font-bold text-gray-900 dark:text-white mb-3 uppercase text-xs tracking-widest border-b border-gray-200 dark:border-gray-600 pb-2 flex items-center justify-between">
                                             {section.title}
+                                            <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
                                         </h5>
                                         <ul className="space-y-2">
-                                            {section.content.map((item: string, i: number) => (
+                                            {section.content?.map((item: string, i: number) => (
                                                 <li key={i} className="text-gray-600 dark:text-gray-300 text-base leading-relaxed flex items-start gap-2">
-                                                    <span className="mt-1.5 w-1.5 h-1.5 bg-green-500 rounded-full flex-shrink-0"></span>
+                                                    <span className="mt-1.5 w-1.5 h-1.5 bg-green-500/20 rounded-full flex-shrink-0"></span>
                                                     <span>{item}</span>
                                                 </li>
                                             ))}

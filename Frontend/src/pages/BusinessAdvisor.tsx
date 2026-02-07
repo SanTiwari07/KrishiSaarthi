@@ -726,10 +726,16 @@ export default function BusinessAdvisor() {
                     })}
                 </div>
                 {selectedBusinessId && BUSINESS_DETAILS[selectedBusinessId] && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-                        <div className="bg-white dark:bg-gray-800 w-full max-w-4xl max-h-[90vh] rounded-3xl shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-200">
+                    <div
+                        className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/70 backdrop-blur-md transition-all"
+                        onClick={() => setSelectedBusinessId(null)}
+                    >
+                        <div
+                            className="bg-white dark:bg-gray-800 w-full max-w-4xl max-h-[90vh] rounded-[2rem] shadow-2xl border border-gray-100 dark:border-gray-700 overflow-hidden flex flex-col"
+                            onClick={(e) => e.stopPropagation()}
+                        >
                             {/* Header */}
-                            <div className="p-6 border-b border-gray-100 dark:border-gray-700 flex justify-between items-start bg-gray-50 dark:bg-gray-900/50">
+                            <div className="p-6 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center bg-gray-50 dark:bg-gray-900/50">
                                 <div>
                                     <h3 className="text-2xl font-bold text-gray-900 dark:text-white leading-tight">
                                         {BUSINESS_DETAILS[selectedBusinessId].title}
@@ -744,11 +750,11 @@ export default function BusinessAdvisor() {
                             </div>
 
                             {/* Scrollable Content */}
-                            <div className="p-8 overflow-y-auto space-y-8">
+                            <div className="p-8 overflow-y-auto space-y-8 custom-scrollbar pb-10">
                                 {/* Basic Idea */}
                                 <div className="bg-blue-50 dark:bg-blue-900/20 p-6 rounded-2xl border border-blue-100 dark:border-blue-800">
                                     <h4 className="text-lg font-bold text-blue-800 dark:text-blue-300 mb-3 flex items-center gap-2">
-                                        <Info size={20} /> BASIC IDEA
+                                        <Info size={20} /> {t('basic.idea') || 'BASIC IDEA'}
                                     </h4>
                                     <ul className="list-disc list-inside space-y-2 text-gray-700 dark:text-gray-300 text-lg">
                                         {(BUSINESS_DETAILS[selectedBusinessId].basicIdea[language] || BUSINESS_DETAILS[selectedBusinessId].basicIdea['en']).map((line, idx) => (
@@ -758,16 +764,17 @@ export default function BusinessAdvisor() {
                                 </div>
 
                                 {/* Key Details Grid */}
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-6">
                                     {BUSINESS_DETAILS[selectedBusinessId].sections.map((section, idx) => (
                                         <div key={idx} className="bg-gray-50 dark:bg-gray-700/30 p-5 rounded-2xl border border-gray-100 dark:border-gray-700">
-                                            <h5 className="font-bold text-gray-900 dark:text-white mb-3 uppercase text-sm tracking-wider border-b border-gray-200 dark:border-gray-600 pb-2">
+                                            <h5 className="font-bold text-gray-900 dark:text-white mb-3 uppercase text-xs tracking-widest border-b border-gray-200 dark:border-gray-600 pb-2 flex items-center justify-between">
                                                 {section.title[language] || section.title['en']}
+                                                <div className="w-1.5 h-1.5 bg-blue-500 rounded-full"></div>
                                             </h5>
                                             <ul className="space-y-2">
                                                 {(section.content[language]?.length ? section.content[language] : section.content['en']).map((item, i) => (
                                                     <li key={i} className="text-gray-600 dark:text-gray-300 text-base leading-relaxed flex items-start gap-2">
-                                                        <span className="mt-1.5 w-1.5 h-1.5 bg-green-500 rounded-full flex-shrink-0"></span>
+                                                        <span className="mt-1.5 w-1.5 h-1.5 bg-blue-500/20 rounded-full flex-shrink-0"></span>
                                                         <span>{item}</span>
                                                     </li>
                                                 ))}

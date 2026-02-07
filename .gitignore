@@ -40,3 +40,7 @@ Frontend/src/firebase.ts
 1_VOIS/VOIS TUTO.mp4
 
 
+
+# Security
+serviceAccountKey.json
+backend/serviceAccountKey.json

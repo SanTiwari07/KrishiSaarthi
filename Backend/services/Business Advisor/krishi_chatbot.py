@@ -5,19 +5,17 @@ AI-powered business advisor for Indian farmers using LangChain + Ollama
 
 import os
 from typing import Optional, List
-
-from langchain_community.llms import Ollama
-from langchain.chains import ConversationChain
-from langchain.memory import ConversationBufferMemory
-from langchain.prompts import PromptTemplate
-from langchain_community.llms import Ollama
-from langchain.chains import ConversationChain
-from langchain.memory import ConversationBufferMemory
-from langchain.prompts import PromptTemplate
-from pydantic import BaseModel, field_validator
 import json
 import re
 import html
+
+# --- LANGCHAIN IMPORTS (Refactored for correctness) ---
+from langchain_community.chat_models import ChatOllama
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder, SystemMessagePromptTemplate, HumanMessagePromptTemplate
+from langchain_core.messages import SystemMessage, HumanMessage, AIMessage, BaseMessage
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.runnables import RunnableSerializable
+from pydantic import BaseModel, field_validator
 
 # ============================================
 # BUSINESS OPTIONS (STRICT LIST)
@@ -285,97 +283,115 @@ class KrishiSaarthiAdvisor:
     
     def __init__(self, farmer_profile: FarmerProfile):
         self.profile = farmer_profile
-        self.llm = None
-        self.conversation = None
-        self.memory = None
+        self.llm: Optional[ChatOllama] = None
+        self.chain: Optional[RunnableSerializable] = None
+        self.chat_history: List[BaseMessage] = []
         self._initialize_llm()
-        self._initialize_conversation()
+        self._initialize_chain()
     
     def _initialize_llm(self):
-        """Initialize Ollama LLM"""
+        """Initialize ChatOllama LLM"""
         try:
-            self.llm = Ollama(
+            self.llm = ChatOllama(
                 model=DEFAULT_OLLAMA_MODEL,
-                temperature=0.7,  # Balanced creativity
-                num_ctx=4096,  # Context window
-                num_predict=1500,  # Max output tokens (prevent JSON truncation)
+                temperature=0.6,  # Balanced for accurate yet natural responses (quality optimized)
+                num_ctx=4096,     # Full context window for complete conversation memory
+                num_predict=1500, # Maximum response length for detailed, comprehensive answers
                 base_url=DEFAULT_OLLAMA_BASE_URL,
             )
-            print("✅ Ollama LLM initialized successfully")
+            print("✅ ChatOllama LLM initialized successfully")
         except Exception as e:
-            print(f"❌ Error initializing Ollama: {e}")
+            print(f"❌ Error initializing ChatOllama: {e}")
             print(
                 "Make sure Ollama is running, the model is pulled,"
                 " and set OLLAMA_FORCE_CPU=0 if you want to try GPU mode."
             )
-            raise
+            # Cannot raise here or app crash, but let it proceed to fail gracefully later
     
-    def _initialize_conversation(self):
-        """Initialize conversation chain with memory"""
-        # Create memory to store chat history
-        self.memory = ConversationBufferMemory(
-            memory_key="chat_history",
-            return_messages=False
-        )
-        
+    def _initialize_chain(self):
+        """Initialize Runnable chain with prompt"""
+        if not self.llm:
+            return
+
         # Get system prompt based on language
-        system_prompt = SYSTEM_PROMPTS.get(
+        system_rules = SYSTEM_PROMPTS.get(
             self.profile.language.lower(), 
             SYSTEM_PROMPTS["english"]
         )
         
-        # Create custom prompt template with farmer profile
-        template = f"""{system_prompt}
-
-{self.profile.to_context()}
-
-Previous conversation:
-{{chat_history}}
-
-Farmer: {{input}}
-KrishiSaarthi AI:"""
+        # Build prompt template
+        # 1. System rules
+        # 2. Farmer context (dynamic)
+        # 3. Chat history
+        # 4. User input
         
-        prompt = PromptTemplate(
-            input_variables=["chat_history", "input"],
-            template=template
-        )
+        prompt = ChatPromptTemplate.from_messages([
+            SystemMessage(content=system_rules),
+            SystemMessage(content=self.profile.to_context()),
+            MessagesPlaceholder(variable_name="chat_history"),
+            HumanMessagePromptTemplate.from_template("{input}")
+        ])
         
-        # Create conversation chain
-        self.conversation = ConversationChain(
-            llm=self.llm,
-            memory=self.memory,
-            prompt=prompt,
-            verbose=False  # Set True for debugging
-        )
+        # Chain: Prompt -> LLM -> String Output
+        self.chain = prompt | self.llm | StrOutputParser()
         
-        print("✅ Conversation chain initialized with memory")
+        print("✅ Runnable chain initialized")
     
     def chat(self, user_message: str) -> str:
         """Send message and get response"""
-        try:
-    def chat(self, user_message: str) -> str:
-        """Send message and get response"""
+        if not self.chain:
+            return "Error: AI not initialized. Check server logs."
+            
         try:
             # excessive sanitization can break multilingual inputs, so we focus on script tags
             clean_message = html.escape(user_message)
-            response = self.conversation.predict(input=clean_message)
+            
+            print("\n" + "="*60)
+            print("🤖 LLM CHAT REQUEST")
+            print("="*60)
+            print(f"📥 User Message: {clean_message}")
+            print(f"📚 Chat History Length: {len(self.chat_history)} messages")
+            print("🔄 Invoking LLM...")
+            
+            # Invoke chain with current history
+            response = self.chain.invoke({
+                "chat_history": self.chat_history,
+                "input": clean_message
+            })
+            
+            print(f"✅ LLM Response Received ({len(response)} chars)")
+            print(f"📤 Response Preview: {response[:200]}..." if len(response) > 200 else f"📤 Full Response: {response}")
+            print("="*60 + "\n")
+            
+            # Update history manually
+            self.chat_history.append(HumanMessage(content=clean_message))
+            self.chat_history.append(AIMessage(content=response))
+            
             return response.strip()
         except Exception as e:
+            print(f"❌ Chat Error: {e}")
             return f"Error: {str(e)}"
     
     def get_chat_history(self) -> str:
-        """Get conversation history"""
-        return self.memory.load_memory_variables({})["chat_history"]
+        """Get conversation history as a formatted string (for debugging/display)"""
+        formatted = ""
+        for msg in self.chat_history:
+            role = "AI" if isinstance(msg, AIMessage) else "User"
+            formatted += f"{role}: {msg.content}\n"
+        return formatted
     
     def clear_memory(self):
         """Clear conversation history"""
-        self.memory.clear()
+        self.chat_history = []
         print("🗑️  Conversation memory cleared")
 
     def generate_recommendations(self) -> List[dict]:
         """Generate top 3 business recommendations based on profile"""
-        
-        prompt = f"""
+        if not self.llm:
+             # Fallback immediately if LLM is down
+             return self._get_fallback_recommendations()
+
+        prompt_text = f"""
         Analyze this farmer's profile:
         {self.profile.to_context()}
         
@@ -420,8 +436,19 @@ KrishiSaarthi AI:"""
         """
         
         try:
+            print("\n" + "="*60)
+            print("🤖 LLM RECOMMENDATION GENERATION")
+            print("="*60)
             print("🤔 Generating recommendations...")
-            response = self.llm.invoke(prompt)
+            print(f"📊 Farmer Profile: {self.profile.name}, Land: {self.profile.land_size} acres, Capital: ₹{self.profile.capital:,.0f}")
+            print("🔄 Invoking LLM for business recommendations...")
+            
+            # Use LLM directly for one-off generation
+            response_msg = self.llm.invoke(prompt_text)
+            response = response_msg.content
+            
+            print(f"✅ LLM Response Received ({len(response)} chars)")
+            print(f"📄 Raw LLM Output (first 300 chars): {response[:300]}..." if len(response) > 300 else f"📄 Raw LLM Output: {response}")
             
             # Robust JSON extraction
             cleaned_response = response.strip()
@@ -440,6 +467,9 @@ KrishiSaarthi AI:"""
             # Try to parse JSON
             try:
                 recommendations = json.loads(cleaned_response)
+                print(f"✅ Successfully parsed {len(recommendations)} recommendations")
+                for i, rec in enumerate(recommendations, 1):
+                    print(f"   {i}. {rec.get('title', 'N/A')} (Score: {rec.get('match_score', 0)})")
             except json.JSONDecodeError as json_err:
                 print(f"⚠️  JSON parse error: {json_err}")
                 print(f"📄 Raw response (first 500 chars): {response[:500]}")
@@ -450,37 +480,46 @@ KrishiSaarthi AI:"""
             valid_ids = {b['id'] for b in BUSINESS_OPTIONS}
             valid_recs = [r for r in recommendations if r.get('id') in valid_ids]
             
+            # Return top 3, or fallback if empty
+            if not valid_recs:
+                raise ValueError("No valid recommendations generated")
+            
+            print(f"✅ Returning {len(valid_recs[:3])} valid recommendations")
+            print("="*60 + "\n")
             return valid_recs[:3]
             
         except Exception as e:
             print(f"❌ Error generating recommendations: {e}")
-            # Fallback to defaults if LLM fails
-            return [
-                {
-                    "id": "1", "title": "FLOWER PLANTATION (GERBERA)",
-                    "reason": "High-value crop suitable for modern farming.",
-                    "match_score": 90,
-                    "estimated_cost": "₹1 Cr+",
-                    "profit_potential": "₹20L+",
-                    "requirements": ["1 Acre Land", "Greenhouse"]
-                },
-                {
-                    "id": "5", "title": "DAIRY FARMING",
-                    "reason": "Stable daily income source.",
-                    "match_score": 85,
-                    "estimated_cost": "₹10-12 Lakh",
-                    "profit_potential": "₹20-40k/month",
-                    "requirements": ["Fodder Land", "Cattle Shed"]
-                },
-                {
-                    "id": "7", "title": "MUSHROOM FARMING",
-                    "reason": "Low land requirement and quick returns.",
-                    "match_score": 80,
-                    "estimated_cost": "₹1.5-3 Lakh",
-                    "profit_potential": "₹15-35k/month",
-                    "requirements": ["Small Shed", "Humidity Control"]
-                }
-            ]
+            return self._get_fallback_recommendations()
+
+    def _get_fallback_recommendations(self):
+        """Return hardcoded fallback recommendations"""
+        return [
+            {
+                "id": "1", "title": "FLOWER PLANTATION (GERBERA)",
+                "reason": "High-value crop suitable for modern farming.",
+                "match_score": 90,
+                "estimated_cost": "₹1 Cr+",
+                "profit_potential": "₹20L+",
+                "requirements": ["1 Acre Land", "Greenhouse"]
+            },
+            {
+                "id": "5", "title": "DAIRY FARMING",
+                "reason": "Stable daily income source.",
+                "match_score": 85,
+                "estimated_cost": "₹10-12 Lakh",
+                "profit_potential": "₹20-40k/month",
+                "requirements": ["Fodder Land", "Cattle Shed"]
+            },
+            {
+                "id": "7", "title": "MUSHROOM FARMING",
+                "reason": "Low land requirement and quick returns.",
+                "match_score": 80,
+                "estimated_cost": "₹1.5-3 Lakh",
+                "profit_potential": "₹15-35k/month",
+                "requirements": ["Small Shed", "Humidity Control"]
+            }
+        ]
 
 
 # ============================================

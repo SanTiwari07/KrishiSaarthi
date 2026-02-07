@@ -306,6 +306,7 @@ const translations: Record<string, Record<Language, string>> = {
   'evidence': { en: 'Evidence', hi: 'प्रमाण', mr: 'पुरावा' },
   'estCredits': { en: 'Credits to Mint', hi: 'जारी करने के लिए क्रेडिट', mr: 'मिंट करण्यासाठी क्रेडिट' },
   'selectRequest': { en: 'Select a request to verify', hi: 'सत्यापित करने के लिए एक अनुरोध चुनें', mr: 'सत्यापित करण्यासाठी विनंती निवडा' },
+  'validation.phase': { en: 'Validation Phase', hi: 'सत्यापन चरण', mr: 'सत्यापन टप्पा' },
   'validation.zero_mile': { en: 'Validation Phase: Zero Mile', hi: 'सत्यापन चरण: शून्य मील', mr: 'सत्यापन टप्पा: शून्य मैल' },
 
   // Buyer Dashboard
@@ -390,10 +391,28 @@ const translations: Record<string, Record<Language, string>> = {
   'marketplace.desc': { en: 'Connect your wallet to browse and purchase verified green credits.', hi: 'सत्यापित हरित क्रेडिट ब्राउज़ करने और खरीदने के लिए अपना वॉलेट कनेक्ट करें।', mr: 'सत्यापित ग्रीन क्रेडिट ब्राउझ करण्यासाठी आणि खरेदी करण्यासाठी आपले वॉलेट कनेक्ट करा.' },
 
   'success.purchase': { en: 'Purchase Successful!', hi: 'खरीदारी सफल!', mr: 'खरेदी यशस्वी!' },
-  'demo.purchase': { en: 'Demo Purchase Successful! You bought credits from Listing', hi: 'डेमो खरीदारी सफल! आपने लिस्टिंग से क्रेडिट खरीदे', mr: 'डेमो खरेदी यशस्वी! आपण लिस्टिंगमधून क्रेडिट खरेदी केले' },
+  'demo.purchase': { en: 'Demo Purchase Successful! You bought credits from Listing', hi: 'डेमो खरीदारी सफल! आपने लिस्टिंग से क्रेडिट खरीदे', mr: 'डेमो खरेदी यशस्वी! आपण लिस्टिंगमधून खरेदी केले' },
   'prompt.buy': { en: 'How much to buy? (Max:', hi: 'कितना खरीदना है? (अधिकतम:', mr: 'किती खरेदी करायचे? (कमाल:' },
   'error.invalid_amount': { en: 'Please enter a valid amount between 1 and', hi: 'कृपया 1 और के बीच एक valid राशि दर्ज करें', mr: 'कृपया 1 आणि च्या दरम्यान वैध रक्कम प्रविष्ट करा' },
   'credit.suffix': { en: 'Credit', hi: 'क्रेडिट', mr: 'क्रेडिट' },
+
+  // Waste to Value
+  'waste.to.value': { en: 'Waste → Value', hi: 'अपशिष्ट से मूल्य', mr: 'कचऱ्यापासून मूल्य' },
+  'waste.to.value.analysis': { en: 'Waste to Value Analysis', hi: 'अपशिष्ट से मूल्य विश्लेषण', mr: 'कचरा ते मूल्य विश्लेषण' },
+  'waste.to.value.desc': { en: 'Turn your crop residues into a profitable business.', hi: 'अपनी फसल के अवशेषों को एक लाभदायक व्यवसाय में बदलें।', mr: 'तुमच्या पिकाच्या अवशेषांना फायदेशीर व्यवसायात बदला.' },
+  'waste.question': { en: 'What waste do you have?', hi: 'आपके पास क्या अपशिष्ट है?', mr: 'तुमच्याकडे कोणता कचरा आहे?' },
+  'waste.placeholder': { en: 'e.g. Banana stem, Sugarcane bagasse, Wheat straw...', hi: 'जैसे: केले का तना, गन्ने की खोई, गेहूं का भूसा...', mr: 'उदा. केळीचे खोड, उसाचे चिपाड, गव्हाचा पेंढा...' },
+  'waste.helper': { en: 'Our AI will analyze the best profitable uses for your specific crop waste.', hi: 'हमारा एआई आपके विशिष्ट फसल अपशिष्ट के लिए सर्वोत्तम लाभदायक उपयोगों का विश्लेषण करेगा।', mr: 'आमचे एआय तुमच्या विशिष्ट पिकाच्या कचऱ्यासाठी सर्वोत्तम फायदेशीर वापरांचे विश्लेषण करेल.' },
+  'analyze.ai': { en: 'Analyze with AI', hi: 'एआई के साथ विश्लेषण करें', mr: 'एआय सह विश्लेषण करा' },
+  'analyzing.crop': { en: 'Analyzing {crop}...', hi: '{crop} का विश्लेषण हो रहा है...', mr: '{crop} चे विश्लेषण होत आहे...' },
+  'identifying.composition': { en: 'Identifying chemical composition...', hi: 'रासायनिक संरचना की पहचान की जा रही है...', mr: 'रासायनिक रचना ओळखत आहे...' },
+  'transforming.crop.profit': { en: 'Transforming {crop} waste into profit', hi: '{crop} अपशिष्ट को लाभ में बदलना', mr: '{crop} कचऱ्याचे नफ्यात रूपांतर' },
+  'conclusion': { en: 'Conclusion', hi: 'निष्कर्ष', mr: 'निष्कर्ष' },
+  'assistant.title': { en: 'Waste-to-Value Assistant', hi: 'अपशिष्ट-से-मूल्य सहायक', mr: 'कचरा-ते-मूल्य सहाय्यक' },
+  'assistant.desc': { en: 'Ask anything about the above recommendations', hi: 'उपरोक्त सिफारिशों के बारे में कुछ भी पूछें', mr: 'वरील शिफारसींबद्दल काहीही विचारा' },
+  'type.question': { en: 'Type your question here...', hi: 'अपना प्रश्न यहाँ टाइप करें...', mr: 'तुमचा प्रश्न येथे टाइप करा...' },
+  'basic.idea': { en: 'BASIC IDEA', hi: 'मूल विचार', mr: 'मूळ कल्पना' },
+
   // Disease Detection Specifics (Demo)
   'Corn (maize)': { en: 'Corn (maize)', hi: 'मक्का', mr: 'मका' },
   'Northern Leaf Blight': { en: 'Northern Leaf Blight', hi: 'उत्तरी पत्ती झुलसा', mr: 'उत्तरीय पानांवरील करपा' },
