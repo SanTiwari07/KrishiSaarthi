@@ -5,6 +5,7 @@ import { ArrowLeft, MessageSquare, Info, X, Leaf, Recycle, ChevronRight, Loader2
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { config } from '../config';
+import { auth } from '../firebase';
 
 const API_BASE_URL = config.API_BASE_URL;
 
@@ -76,10 +77,12 @@ export default function WasteToValue() {
         setView('processing');
 
         try {
+            const token = await auth.currentUser?.getIdToken();
             const response = await fetch(`${API_BASE_URL}/waste-to-value/analyze`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
                 },
                 body: JSON.stringify({ crop: cropInput }),
             });
@@ -120,9 +123,13 @@ export default function WasteToValue() {
         setIsChatLoading(true);
 
         try {
+            const token = await auth.currentUser?.getIdToken();
             const response = await fetch(`${API_BASE_URL}/waste-to-value/chat`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
                 body: JSON.stringify({
                     context: resultData,
                     question: chatInput

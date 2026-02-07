@@ -5,10 +5,20 @@ Integrates Disease Detector and Business Advisor
 
 from flask import Flask, request, jsonify
 from flask_cors import CORS
+from flask_talisman import Talisman
+from dotenv import load_dotenv
 import os
 import sys
 from werkzeug.utils import secure_filename
 import pandas as pd
+from pathlib import Path
+from middleware.auth import init_firebase, require_auth
+
+# Load environment variables
+load_dotenv()
+
+# Initialize Firebase
+init_firebase()
 from pathlib import Path
 
 # Add project modules to path
@@ -33,7 +43,13 @@ waste_engine = WasteToValueEngine() # Initialize singleton
 
 
 app = Flask(__name__)
-CORS(app)  # Enable CORS for frontend
+
+# Security Headers
+Talisman(app, force_https=False) # Set force_https=True in production
+
+# CORS Configuration
+allowed_origins = os.getenv('ALLOWED_ORIGINS', '*').split(',')
+CORS(app, resources={r"/api/*": {"origins": allowed_origins}}, supports_credentials=True)
 
 # Resolve important paths relative to this file so things work no matter
 # where you run the server from.
@@ -126,7 +142,10 @@ def health_check():
         'data_loaded': disease_data is not None
     })
 
+    })
+
 @app.route('/api/disease/detect', methods=['POST'])
+@require_auth
 def detect_disease():
     """Disease detection endpoint"""
     try:
@@ -191,6 +210,7 @@ def detect_disease():
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/business-advisor/init', methods=['POST'])
+@require_auth
 def init_advisor():
     """Initialize business advisor session"""
     try:
@@ -247,6 +267,7 @@ def init_advisor():
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/business-advisor/chat', methods=['POST'])
+@require_auth
 def chat_advisor():
     """Chat with business advisor"""
     try:
@@ -272,6 +293,7 @@ def chat_advisor():
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/business-advisor/integrated-advice', methods=['POST'])
+@require_auth
 def integrated_advice():
     """Get business advice integrated with disease detection results"""
     try:
@@ -321,6 +343,7 @@ def integrated_advice():
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/waste-to-value/analyze', methods=['POST'])
+@require_auth
 def analyze_waste():
     """Analyze crop waste using LLM"""
     try:
@@ -339,6 +362,7 @@ def analyze_waste():
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/waste-to-value/chat', methods=['POST'])
+@require_auth
 def chat_waste_api():
     """Chat with the waste assistant"""
     try:
@@ -359,6 +383,7 @@ def chat_waste_api():
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/business-advisor/sessions/<session_id>', methods=['DELETE'])
+@require_auth
 def delete_session(session_id):
     """Delete advisor session"""
     if session_id in advisor_sessions:
@@ -378,5 +403,6 @@ if __name__ == '__main__':
     print("  POST /api/business-advisor/integrated-advice - Get integrated advice")
     print("\n" + "="*60 + "\n")
     
-    app.run(debug=True, port=5000, host='0.0.0.0')
+    debug_mode = os.getenv('FLASK_DEBUG', '0') == '1'
+    app.run(debug=debug_mode, port=5000, host='0.0.0.0')
 

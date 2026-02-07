@@ -10,9 +10,14 @@ from langchain_community.llms import Ollama
 from langchain.chains import ConversationChain
 from langchain.memory import ConversationBufferMemory
 from langchain.prompts import PromptTemplate
-from pydantic import BaseModel
+from langchain_community.llms import Ollama
+from langchain.chains import ConversationChain
+from langchain.memory import ConversationBufferMemory
+from langchain.prompts import PromptTemplate
+from pydantic import BaseModel, field_validator
 import json
 import re
+import html
 
 # ============================================
 # BUSINESS OPTIONS (STRICT LIST)
@@ -79,6 +84,20 @@ class FarmerProfile(BaseModel):
     water_availability: Optional[str] = None
     crops_grown: Optional[List[str]] = None
     land_unit: str = "acres"
+    
+    @field_validator('name')
+    @classmethod
+    def validate_name(cls, v):
+        if not re.match(r"^[a-zA-Z\s\-.']+$", v):
+            raise ValueError('Name contains invalid characters')
+        return v
+        
+    @field_validator('land_size', 'capital', 'experience_years')
+    @classmethod
+    def validate_positive(cls, v):
+        if v is not None and v < 0:
+            raise ValueError('Value must be non-negative')
+        return v
     
     def to_context(self) -> str:
         """Convert profile to natural language context for AI (Agricultural Decision Intelligence format)"""
@@ -334,7 +353,12 @@ KrishiSaarthi AI:"""
     def chat(self, user_message: str) -> str:
         """Send message and get response"""
         try:
-            response = self.conversation.predict(input=user_message)
+    def chat(self, user_message: str) -> str:
+        """Send message and get response"""
+        try:
+            # excessive sanitization can break multilingual inputs, so we focus on script tags
+            clean_message = html.escape(user_message)
+            response = self.conversation.predict(input=clean_message)
             return response.strip()
         except Exception as e:
             return f"Error: {str(e)}"

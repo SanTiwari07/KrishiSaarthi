@@ -7,6 +7,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
 import { config } from '../config';
+import { auth } from '../firebase';
 
 const API_BASE_URL = config.API_BASE_URL;
 
@@ -149,9 +150,13 @@ export default function BusinessAdvisor() {
         setIsLoading(true);
         setError(null);
         try {
+            const token = await auth.currentUser?.getIdToken();
             const response = await fetch(`${API_BASE_URL}/business-advisor/init`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
                 body: JSON.stringify({
                     name: user?.name || 'Farmer',
                     age: user?.age ? parseInt(user.age) : undefined,
@@ -195,9 +200,13 @@ export default function BusinessAdvisor() {
         setIsLoading(true);
         try {
             // Init session first
+            const token = await auth.currentUser?.getIdToken();
             const initResponse = await fetch(`${API_BASE_URL}/business-advisor/init`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
                 body: JSON.stringify({
                     name: user?.name || 'Farmer',
                     age: user?.age ? parseInt(user.age) : undefined,
@@ -221,7 +230,10 @@ export default function BusinessAdvisor() {
             // Send initial strict prompt
             const chatResponse = await fetch(`${API_BASE_URL}/business-advisor/chat`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
                 body: JSON.stringify({
                     session_id: initData.session_id,
                     message: prompt
@@ -258,9 +270,13 @@ export default function BusinessAdvisor() {
         // If no session, try to init one silently (or handle error)
         if (!currentSessionId) {
             try {
+                const token = await auth.currentUser?.getIdToken();
                 const res = await fetch(`${API_BASE_URL}/business-advisor/init`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
                     body: JSON.stringify({
                         name: user?.name || 'Farmer',
                         age: user?.age ? parseInt(user.age) : undefined,
@@ -304,9 +320,13 @@ export default function BusinessAdvisor() {
                 If the user asks about money, politely steer back to plant health.)`;
             }
 
+            const token = await auth.currentUser?.getIdToken();
             const response = await fetch(`${API_BASE_URL}/business-advisor/chat`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
                 body: JSON.stringify({
                     session_id: currentSessionId,
                     message: finalMessage

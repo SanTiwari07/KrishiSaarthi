@@ -33,7 +33,12 @@ KrishiSaarthi is a next-generation "Phygital" (Physical + Digital) platform desi
 - **Transparent Trading**: Buyers (Corporates/Individuals) can purchase these credits directly from farmers to offset their carbon footprint.
 - **Smart Contracts**: Powered by Ethereum/Polygon smart contracts ensures secure and immutable transactions.
 
-### 4. Role-Based Ecosystem
+### 4. Waste to Value (Eco-Processing)
+- **Crop Waste Analysis**: Farmers input their crop residue details (e.g., Banana pseudostems, Rice straw).
+- **Value-Added Products**: AI suggests products that can be made from the waste (e.g., Fibers, Bio-gas, Compost).
+- **Process Guidance**: Step-by-step instructions on how to process the waste and sell the final product.
+
+### 5. Role-Based Ecosystem
 - **Farmer**: Scan crops, get advice, apply for green credits.
 - **Validator**: Verify farmer applications, mint credits (Admin capability).
 - **Buyer**: Browse verified projects and purchase green credits.
@@ -90,6 +95,8 @@ cd Frontend
 npm install
 ```
 
+> **Note**: For detailed frontend documentation, features, and folder structure, please refer to [Frontend/README.md](./Frontend/README.md).
+
 **Environment Variables (.env)**:
 Create a `.env` file in the `Frontend` directory with your Firebase config:
 ```env
@@ -113,6 +120,7 @@ cd Backend
 python -m venv venv
 # Activate: .\venv\Scripts\activate (Windows) or source venv/bin/activate (Mac/Linux)
 pip install -r requirements.txt
+# Note: Streamlit is now included in requirements for the Waste-to-Value module
 ```
 Start the application (ensure your AI models are downloaded/linked properly).
 

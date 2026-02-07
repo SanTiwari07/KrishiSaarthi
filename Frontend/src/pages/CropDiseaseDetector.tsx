@@ -4,6 +4,7 @@ import { useApp } from '../contexts/AppContext';
 import { Scan, ArrowLeft, Camera, Loader2, CheckCircle, Info, Upload } from 'lucide-react';
 
 import { config } from '../config';
+import { auth } from '../firebase';
 
 const API_BASE_URL = config.API_BASE_URL;
 
@@ -49,8 +50,12 @@ export default function CropDiseaseDetector() {
             const formData = new FormData();
             formData.append('image', file);
 
+            const token = await auth.currentUser?.getIdToken();
             const response = await fetch(`${API_BASE_URL}/disease/detect`, {
                 method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                },
                 body: formData,
             });
 

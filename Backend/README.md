@@ -40,6 +40,14 @@ cd Backend
 python app.py
 ```
 
+### Running the Waste-to-Value UI (Streamlit)
+
+To launch the interactive AI decision engine:
+```bash
+# Ensure you are in the Backend directory
+streamlit run services/WasteToValue/src/ui.py
+```
+
 The server will start on `http://localhost:5000`
 
 ## API Endpoints
