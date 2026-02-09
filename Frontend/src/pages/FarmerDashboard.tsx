@@ -213,15 +213,15 @@ export default function FarmerDashboard() {
             </nav>
 
             {/* Main Dashboard Content */}
-            <div className="flex-grow overflow-y-auto scrollbar-hide py-4">
-                <div className="max-w-7xl mx-auto px-4 pb-20">
+            <div className="flex-grow overflow-hidden py-2">
+                <div className="max-w-7xl mx-auto px-4 pb-4 h-full flex items-center">
 
 
-                    <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
+                    <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 w-full">
                         {/* Sidebar Nav & Impact Stats */}
-                        <div className="lg:col-span-1 space-y-6 hidden lg:block">
+                        <div className="lg:col-span-1 space-y-4 hidden lg:block">
                             {/* Impact Stats in Sidebar */}
-                            <div className="space-y-4">
+                            <div className="space-y-3">
                                 <h2 className="text-xl font-bold text-gray-900 dark:text-white px-2 cursor-default">{t('your.impact')}</h2>
 
                                 <div className="bg-white dark:bg-gray-800 p-5 rounded-3xl border border-gray-100 dark:border-gray-700 shadow-sm transition-all hover:shadow-md">
@@ -256,10 +256,10 @@ export default function FarmerDashboard() {
                         </div>
 
                         {/* Main Content Area */}
-                        <div className="lg:col-span-4 space-y-12 animate-fade-in">
+                        <div className="lg:col-span-4 space-y-4 animate-fade-in">
 
                             {/* Big Feature Boxes */}
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-[38px]">
                                 {features.map((feat, idx) => (
                                     <div
                                         key={idx}

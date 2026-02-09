@@ -11,6 +11,8 @@ KrishiSaarthi is a next-generation "Phygital" (Physical + Digital) platform desi
 
 </div>
 
+> **📖 For comprehensive technical details, architecture, and implementation guide, see [DETAIL.md](./DETAIL.md)**
+
 ---
 
 ## Key Features
