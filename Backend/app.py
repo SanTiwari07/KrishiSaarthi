@@ -59,11 +59,11 @@ def load_disease_data():
     try:
         if CSV_PATH.exists():
             disease_data = pd.read_csv(str(CSV_PATH))
-            print("✅ Disease data CSV loaded successfully")
+            print("Disease data CSV loaded successfully")
         else:
-            print(f"⚠️  CSV file not found at {CSV_PATH}")
+            print(f"Warning: CSV file not found at {CSV_PATH}")
     except Exception as e:
-        print(f"❌ Error loading disease data: {e}")
+        print(f"Error loading disease data: {e}")
 load_disease_data()
 
 # --- Business Advisor Setup ---
@@ -82,11 +82,11 @@ if str(WASTE_TO_VALUE_DIR) not in sys.path:
 from waste_service import WasteToValueEngine
 waste_engine = None
 try:
-    print("🔧 Initializing Waste-to-Value Engine...")
+    print("Initializing Waste-to-Value Engine...")
     waste_engine = WasteToValueEngine()
-    print("✅ Waste-to-Value Engine initialized successfully")
+    print("Waste-to-Value Engine initialized successfully")
 except Exception as e:
-    print(f"⚠️  Warning: Waste-to-Value Engine failed to initialize: {e}")
+    print(f"Warning: Waste-to-Value Engine failed to initialize: {e}")
     print("   The /api/waste-to-value endpoints will return errors until Ollama is available.")
     import traceback
     traceback.print_exc()
@@ -195,14 +195,14 @@ def detect_disease():
 def init_advisor():
     try:
         print("\n" + "="*60)
-        print("🌾 BUSINESS ADVISOR INIT REQUEST")
+        print("BUSINESS ADVISOR INIT REQUEST")
         print("="*60)
         data = request.json
-        print(f"📋 Farmer Name: {data.get('name', 'Farmer')}")
-        print(f"🌍 Location: {data.get('state')}, {data.get('district')}, {data.get('village')}")
-        print(f"🏞️ Land: {data.get('land_size')} {data.get('land_unit', 'acres')}")
-        print(f"💰 Capital: ₹{float(data.get('capital', 100000)):,.0f}")
-        print(f"🌱 Crops: {data.get('crops_grown', [])}")
+        print(f"Farmer Name: {data.get('name', 'Farmer')}")
+        print(f"Location: {data.get('state')}, {data.get('district')}, {data.get('village')}")
+        print(f"Land: {data.get('land_size')} {data.get('land_unit', 'acres')}")
+        print(f"Capital: ₹{float(data.get('capital', 100000)):,.0f}")
+        print(f"Crops: {data.get('crops_grown', [])}")
         
         profile = FarmerProfile(
             name=data.get('name', 'Farmer'),
@@ -229,18 +229,18 @@ def init_advisor():
             land_unit=data.get('land_unit', 'acres')
         )
         
-        print("🔧 Initializing KrishiSaarthi Advisor...")
+        print("Initializing KrishiSaarthi Advisor...")
         advisor = KrishiSaarthiAdvisor(profile)
         
         import uuid
         session_id = str(uuid.uuid4())
         advisor_sessions[session_id] = advisor
-        print(f"✅ Session Created: {session_id}")
-        print(f"📊 Active Sessions: {len(advisor_sessions)}")
+        print(f"Session Created: {session_id}")
+        print(f"Active Sessions: {len(advisor_sessions)}")
         
-        print("🎯 Generating recommendations...")
+        print("Generating recommendations...")
         recommendations = advisor.generate_recommendations()
-        print(f"✅ Init Complete - Returning {len(recommendations)} recommendations")
+        print(f"Init Complete - Returning {len(recommendations)} recommendations")
         print("="*60 + "\n")
         
         return jsonify({
@@ -250,7 +250,7 @@ def init_advisor():
             'message': 'Business advisor initialized successfully'
         })
     except Exception as e:
-        print(f"❌ Error in init_advisor: {e}")
+        print(f"Error in init_advisor: {e}")
         import traceback
         traceback.print_exc()
         return jsonify({'error': str(e)}), 500
@@ -260,32 +260,32 @@ def init_advisor():
 def chat_advisor():
     try:
         print("\n" + "="*60)
-        print("💬 BUSINESS ADVISOR CHAT REQUEST")
+        print("BUSINESS ADVISOR CHAT REQUEST")
         print("="*60)
         data = request.json
         session_id = data.get('session_id')
         message = data.get('message')
         
-        print(f"🔑 Session ID: {session_id}")
-        print(f"💭 User Message: {message}")
+        print(f"Session ID: {session_id}")
+        print(f"User Message: {message}")
         
         if not session_id or not message:
-            print("❌ Missing session_id or message")
+            print("Missing session_id or message")
             return jsonify({'error': 'session_id and message are required'}), 400
         if session_id not in advisor_sessions:
-            print(f"❌ Invalid session_id: {session_id}")
-            print(f"📊 Available sessions: {list(advisor_sessions.keys())}")
+            print(f"Invalid session_id: {session_id}")
+            print(f"Available sessions: {list(advisor_sessions.keys())}")
             return jsonify({'error': 'Invalid session_id'}), 404
         
         advisor = advisor_sessions[session_id]
-        print("🔄 Forwarding to chatbot...")
+        print("Forwarding to chatbot...")
         response = advisor.chat(message)
-        print(f"✅ Chat Complete - Response length: {len(response)} chars")
+        print(f"Chat Complete - Response length: {len(response)} chars")
         print("="*60 + "\n")
         
         return jsonify({'success': True, 'response': response})
     except Exception as e:
-        print(f"❌ Error in chat_advisor: {e}")
+        print(f"Error in chat_advisor: {e}")
         import traceback
         traceback.print_exc()
         return jsonify({'error': str(e)}), 500
@@ -295,23 +295,23 @@ def chat_advisor():
 def integrated_advice():
     try:
         print("\n" + "="*60)
-        print("🩺 INTEGRATED DISEASE ADVICE REQUEST")
+        print("INTEGRATED DISEASE ADVICE REQUEST")
         print("="*60)
         data = request.json
         session_id = data.get('session_id')
         disease_result = data.get('disease_result')
         
-        print(f"🔑 Session ID: {session_id}")
-        print(f"🦠 Disease Result: {disease_result}")
+        print(f"Session ID: {session_id}")
+        print(f"Disease Result: {disease_result}")
         
         if not session_id: 
-            print("❌ Missing session_id")
+            print("Missing session_id")
             return jsonify({'error': 'session_id is required'}), 400
         if session_id not in advisor_sessions: 
-            print(f"❌ Invalid session_id: {session_id}")
+            print(f"Invalid session_id: {session_id}")
             return jsonify({'error': 'Invalid session_id'}), 404
         if not disease_result: 
-            print("❌ Missing disease_result")
+            print("Missing disease_result")
             return jsonify({'error': 'disease_result is required'}), 400
         
         advisor = advisor_sessions[session_id]
@@ -320,11 +320,11 @@ def integrated_advice():
         severity = disease_result.get('severity', 'medium')
         
         context_message = f"I have detected {disease} disease in my {crop} crop with {severity} severity."
-        print(f"📝 Generated Context: {context_message}")
-        print("🔄 Forwarding to chatbot...")
+        print(f"Generated Context: {context_message}")
+        print("Forwarding to chatbot...")
         
         response = advisor.chat(context_message)
-        print(f"✅ Integrated Advice Complete")
+        print(f"Integrated Advice Complete")
         print("="*60 + "\n")
         
         return jsonify({
@@ -333,7 +333,7 @@ def integrated_advice():
             'disease_context': {'crop': crop, 'disease': disease, 'severity': severity}
         })
     except Exception as e:
-        print(f"❌ Error in integrated_advice: {e}")
+        print(f"Error in integrated_advice: {e}")
         import traceback
         traceback.print_exc()
         return jsonify({'error': str(e)}), 500
@@ -344,24 +344,24 @@ def integrated_advice():
 def analyze_waste():
     try:
         print("\n" + "="*60)
-        print("♻️ WASTE-TO-VALUE ANALYZE REQUEST")
+        print("WASTE-TO-VALUE ANALYZE REQUEST")
         print("="*60)
         data = request.json
         crop = data.get('crop')
         language = data.get('language', 'English')
-        print(f"🌾 Crop: {crop}, Language: {language}")
+        print(f"Crop: {crop}, Language: {language}")
         
         if not crop:
-            print("❌ Missing crop name")
+            print("Missing crop name")
             return jsonify({'error': 'Crop name is required'}), 400
         
         if waste_engine is None:
-            print("❌ Waste-to-Value Engine not initialized")
+            print("Waste-to-Value Engine not initialized")
             return jsonify({'error': 'Waste-to-Value service is currently unavailable. Please check if Ollama is running.'}), 503
         
-        print("🔄 Forwarding to WasteToValueEngine...")
+        print("Forwarding to WasteToValueEngine...")
         result = waste_engine.analyze_waste(crop, language)
-        print(f"✅ Analysis Complete")
+        print(f"Analysis Complete")
         print("="*60 + "\n")
         
         return jsonify({
@@ -369,7 +369,7 @@ def analyze_waste():
             'result': result
         })
     except Exception as e:
-        print(f"❌ Server Error in analyze_waste: {e}")
+        print(f"Server Error in analyze_waste: {e}")
         import traceback
         traceback.print_exc()
         return jsonify({'error': str(e)}), 500
@@ -379,27 +379,27 @@ def analyze_waste():
 def chat_waste_api():
     try:
         print("\n" + "="*60)
-        print("💬 WASTE-TO-VALUE CHAT REQUEST")
+        print("WASTE-TO-VALUE CHAT REQUEST")
         print("="*60)
         data = request.json
         context = data.get('context')
         question = data.get('question')
         language = data.get('language', 'English')
         
-        print(f"💭 Question: {question}, Language: {language}")
-        print(f"📚 Context Keys: {list(context.keys()) if context else 'None'}")
+        print(f"Question: {question}, Language: {language}")
+        print(f"Context Keys: {list(context.keys()) if context else 'None'}")
         
         if not context or not question:
-            print("❌ Missing context or question")
+            print("Missing context or question")
             return jsonify({'error': 'Context and question are required'}), 400
         
         if waste_engine is None:
-            print("❌ Waste-to-Value Engine not initialized")
+            print("Waste-to-Value Engine not initialized")
             return jsonify({'error': 'Waste-to-Value service is currently unavailable. Please check if Ollama is running.'}), 503
         
-        print("🔄 Forwarding to WasteToValueEngine...")
+        print("Forwarding to WasteToValueEngine...")
         response = waste_engine.chat_waste(context, question, language)
-        print(f"✅ Chat Complete")
+        print(f"Chat Complete")
         print("="*60 + "\n")
         
         return jsonify({
@@ -407,7 +407,7 @@ def chat_waste_api():
             'response': response
         })
     except Exception as e:
-        print(f"❌ Chat Server Error: {e}")
+        print(f"Chat Server Error: {e}")
         import traceback
         traceback.print_exc()
         return jsonify({'error': str(e)}), 500

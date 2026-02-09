@@ -48,7 +48,7 @@ export default function WasteToValue() {
                 {
                     id: '1',
                     sender: 'ai',
-                    text: `Hello **${user?.name || 'Farmer'}**! 👋\n\nI have analyzed your **${resultData?.crop}** waste.\n\nAbove are the top 3 profitable ways to use it. Ask me anything about these options!`,
+                    text: `Hello **${user?.name || 'Farmer'}**! \n\nI have analyzed your **${resultData?.crop}** waste.\n\nAbove are the top 3 profitable ways to use it. Ask me anything about these options!`,
                     timestamp: new Date()
                 }
             ]);
@@ -160,7 +160,7 @@ export default function WasteToValue() {
             const errorMsg: ChatMessage = {
                 id: (Date.now() + 1).toString(),
                 sender: 'ai',
-                text: "⚠️ Connection error. Please ensure the backend is running.",
+                text: "Connection error. Please ensure the backend is running.",
                 timestamp: new Date()
             };
             setMessages(prev => [...prev, errorMsg]);

@@ -1,8 +1,8 @@
-# 🌾 KrishiSaarthi - Agricultural Platform
+# KrishiSaarthi - Agricultural Platform
 
 A comprehensive multi-role, multi-language agricultural platform designed for farmers, validators, and buyers in India.
 
-## 🎯 Overview
+## Overview
 
 KrishiSaarthi (Your Digital Farming Partner) is a modern, farmer-friendly platform that supports three user roles:
 
@@ -10,7 +10,7 @@ KrishiSaarthi (Your Digital Farming Partner) is a modern, farmer-friendly platfo
 2. **Validator** - Verify farmer activities and approve credits
 3. **Buyer** - Purchase verified green credits
 
-## 🌐 Multi-Language Support
+## Multi-Language Support
 
 The platform supports three languages with Devanagari font support:
 - **English (EN)**
@@ -19,7 +19,7 @@ The platform supports three languages with Devanagari font support:
 
 Language can be switched anytime using the top-right toggle.
 
-## 🎨 Design System
+## Design System
 
 ### Colors
 - **Primary Green**: #4CAF50
@@ -39,9 +39,9 @@ Language can be switched anytime using the top-right toggle.
 - Large, touch-friendly buttons
 - High contrast for readability
 
-## 📱 Platform Features
+## Platform Features
 
-### 🌱 For Farmers
+### For Farmers
 
 #### 1. Crop Disease Detector
 - Upload or capture leaf images
@@ -78,7 +78,7 @@ Language can be switched anytime using the top-right toggle.
 - Track submission status (Pending/Approved/Rejected)
 - View earned credits
 
-### 🛡️ For Validators
+### For Validators
 
 - Review pending farmer submissions
 - View activity details and uploaded images
@@ -87,7 +87,7 @@ Language can be switched anytime using the top-right toggle.
 - Track verification history
 - Clean, professional dashboard
 
-### 🛒 For Buyers
+### For Buyers
 
 #### Credit Purchase
 - Quick select: 10, 20, 50, 100 credits
@@ -102,7 +102,7 @@ Language can be switched anytime using the top-right toggle.
 - Direct purchase from marketplace
 - Receipt generation
 
-## 🔐 Authentication
+## Authentication
 
 ### Role Selection
 - Interactive role selection with animated cards
@@ -117,7 +117,7 @@ Required fields:
 - Email
 - Password
 
-## 🗂️ Project Structure
+## Project Structure
 
 ```
 /
@@ -140,7 +140,7 @@ Required fields:
     └── globals.css                 # Global styles & fonts
 ```
 
-## 🚀 Navigation Flow
+## Navigation Flow
 
 ### Farmer Flow
 1. Landing Page → Role Selection → Login/Sign Up
@@ -159,7 +159,7 @@ Required fields:
 2. Buyer Dashboard → Purchase/Marketplace tabs
 3. Select credits → Purchase → Receipt
 
-## 🎭 Mock Data
+## Mock Data
 
 The platform includes realistic mock data for demonstration:
 - Sample farmer submissions
@@ -168,14 +168,14 @@ The platform includes realistic mock data for demonstration:
 - Marketplace listings
 - Expert contacts
 
-## 🔑 Demo Login
+## Demo Login
 
 Use the role selection page to quickly login as:
 - **Farmer**: राज पाटिल (Raj Patil)
 - **Validator**: Dr. Sharma
 - **Buyer**: Green Corp
 
-## 📱 Responsive Design
+## Responsive Design
 
 - Mobile-first approach
 - Tablet-optimized layouts
@@ -183,7 +183,7 @@ Use the role selection page to quickly login as:
 - Touch-friendly interactions
 - Optimized for rural connectivity
 
-## ♿ Accessibility
+## Accessibility
 
 - Large, readable fonts
 - High contrast colors
@@ -191,14 +191,14 @@ Use the role selection page to quickly login as:
 - Multi-language support
 - Simple, intuitive UI
 
-## 🌍 Target Users
+## Target Users
 
 - **Primary**: Small to medium farmers in rural India
 - **Secondary**: Agricultural validators and green credit buyers
 - **Language**: Hindi, Marathi, and English speakers
 - **Device**: Mobile and tablet users with basic literacy
 
-## 🎯 Key Differentiators
+## Key Differentiators
 
 1. **Multi-language with Devanagari support**
 2. **Icon-heavy, text-light interface**
@@ -208,7 +208,7 @@ Use the role selection page to quickly login as:
 6. **Green credit marketplace**
 7. **AI-powered recommendations**
 
-## 🔮 Future Enhancements
+## Future Enhancements
 
 - Voice input support
 - Offline mode with sync

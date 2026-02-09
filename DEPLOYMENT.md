@@ -1,17 +1,17 @@
-# 🚀 Deployment Guide: How to Run KrishiSaarthi Globally
+# Deployment Guide: How to Run KrishiSaarthi Globally
 
 This guide explains how to take your project from "Localhost" to the "Live Web" so anyone in the world can use it.
 
-## 🛑 The Challenge: "Local" vs "Global"
+## The Challenge: "Local" vs "Global"
 Your project has three parts, and each needs a different home in the cloud:
 
-1.  **Frontend (React):** 🟢 **Easy.** Can be hosted on Firebase, Vercel, or Netlify.
-2.  **Backend Logic (Flask + Disease Model):** 🟡 **Medium.** Needs a Python server (Render, Railway, or AWS).
-3.  **The LLM (Ollama):** 🔴 **Hard.** Currently, your code connects to `localhost:11434`. Cloud servers *do not* have Ollama installed by default.
+1.  **Frontend (React):** **Easy.** Can be hosted on Firebase, Vercel, or Netlify.
+2.  **Backend Logic (Flask + Disease Model):** **Medium.** Needs a Python server (Render, Railway, or AWS).
+3.  **The LLM (Ollama):** **Hard.** Currently, your code connects to `localhost:11434`. Cloud servers *do not* have Ollama installed by default.
 
 ---
 
-## ✅ Step 1: Frontend Deployment (Firebase)
+## Step 1: Frontend Deployment (Firebase)
 
 You are already using Firebase, so this is the easiest part.
 
@@ -31,7 +31,7 @@ You are already using Firebase, so this is the easiest part.
 
 ---
 
-## ✅ Step 2: Backend Deployment (Flask + Disease Model)
+## Step 2: Backend Deployment (Flask + Disease Model)
 
 We need to package your Python code into a **Docker Container** so it runs on any cloud server.
 
@@ -79,7 +79,7 @@ Add `gunicorn` and `flask-cors` to your `Backend/requirements.txt` if they aren'
 
 ---
 
-## ✅ Step 3: Solving the LLM (Ollama) Issue
+## Step 3: Solving the LLM (Ollama) Issue
 
 This is the most critical part. You cannot easily run Ollama on a free cloud server because LLMs need **8GB+ RAM** and ideally a **GPU**.
 
@@ -100,7 +100,7 @@ If you *must* use Ollama:
 
 ---
 
-## 📝 Summary Checklist
+## Summary Checklist
 
 | Component | Local Setup | Global Setup (Recommended) |
 | :--- | :--- | :--- |
@@ -109,9 +109,9 @@ If you *must* use Ollama:
 | **Disease Model** | Local `.h5` file | packaged in **Docker Image** (runs on CPU) |
 | **Business LLM** | Local `Ollama` | Switch to **Gemini/OpenAI API** OR Rent GPU Server |
 
-### 🔗 Next Steps for You
+### Next Steps for You
 1.  Create the `Dockerfile` in `Backend/`.
 2.  Decide if you want to pay for a GPU server (for Ollama) or switch to a Cloud API (Gemini/OpenAI).
 3.  Push your code to GitHub.
 4.  Connect GitHub to Render/Railway.
-5.  Enjoy your global app! 🌍
+5.  Enjoy your global app!

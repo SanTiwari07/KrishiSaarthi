@@ -35,7 +35,7 @@ KrishiSaarthi is a next-generation "Phygital" (Physical + Digital) platform desi
 
 ### 4. Waste to Value (Eco-Processing)
 - **Crop Waste Analysis**: Farmers input their crop residue details (e.g., Banana pseudostems, Rice straw).
-- **Value-Added Products**: AI suggests products that can be made from the waste (e.g., Fibers, Bio-gas, Compost).
+- **AI Recommendations**: Uses **Ollama (Local LLM)** to suggest products that can be made from the waste (e.g., Fibers, Bio-gas, Compost).
 - **Process Guidance**: Step-by-step instructions on how to process the waste and sell the final product.
 
 ### 5. Role-Based Ecosystem
@@ -126,7 +126,7 @@ Start the application (ensure your AI models are downloaded/linked properly).
 
 ---
 
-## 📖 Usage Guide
+## Usage Guide
 
 ### For Farmers
 1. **Login/Signup** as a Farmer.

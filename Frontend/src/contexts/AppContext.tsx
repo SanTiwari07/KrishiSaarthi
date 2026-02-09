@@ -399,7 +399,8 @@ const translations: Record<string, Record<Language, string>> = {
   // Waste to Value
   'waste.to.value': { en: 'Waste → Value', hi: 'अपशिष्ट से मूल्य', mr: 'कचऱ्यापासून मूल्य' },
   'waste.to.value.analysis': { en: 'Waste to Value Analysis', hi: 'अपशिष्ट से मूल्य विश्लेषण', mr: 'कचरा ते मूल्य विश्लेषण' },
-  'waste.to.value.desc': { en: 'Turn your crop residues into a profitable business.', hi: 'अपनी फसल के अवशेषों को एक लाभदायक व्यवसाय में बदलें।', mr: 'तुमच्या पिकाच्या अवशेषांना फायदेशीर व्यवसायात बदला.' },
+  'waste.to.value.desc': { en: 'Crop residue to profitable business', hi: 'फसल के अवशेषों से लाभदायक व्यवसाय', mr: 'पिकाच्या अवशेषांपासून फायदेशीर व्यवसाय' },
+  'explore.options': { en: 'Explore Options', hi: 'विकल्प खोजें', mr: 'पर्याय शोधा' },
   'waste.question': { en: 'What waste do you have?', hi: 'आपके पास क्या अपशिष्ट है?', mr: 'तुमच्याकडे कोणता कचरा आहे?' },
   'waste.placeholder': { en: 'e.g. Banana stem, Sugarcane bagasse, Wheat straw...', hi: 'जैसे: केले का तना, गन्ने की खोई, गेहूं का भूसा...', mr: 'उदा. केळीचे खोड, उसाचे चिपाड, गव्हाचा पेंढा...' },
   'waste.helper': { en: 'Our AI will analyze the best profitable uses for your specific crop waste.', hi: 'हमारा एआई आपके विशिष्ट फसल अपशिष्ट के लिए सर्वोत्तम लाभदायक उपयोगों का विश्लेषण करेगा।', mr: 'आमचे एआय तुमच्या विशिष्ट पिकाच्या कचऱ्यासाठी सर्वोत्तम फायदेशीर वापरांचे विश्लेषण करेल.' },

@@ -15,18 +15,18 @@ def init_firebase():
             cred_path = os.path.join(base_dir, cred_path)
             
         if not os.path.exists(cred_path):
-            print(f"⚠️  Warning: Firebase credentials not found at {cred_path}")
+            print(f"Warning: Firebase credentials not found at {cred_path}")
             print("   Auth middleware will fail efficiently. Please add serviceAccountKey.json")
             return
 
         cred = credentials.Certificate(cred_path)
         firebase_admin.initialize_app(cred)
-        print("✅ Firebase Admin SDK initialized")
+        print("Firebase Admin SDK initialized")
     except ValueError:
         # App already initialized
         pass
     except Exception as e:
-        print(f"❌ Error initializing Firebase: {e}")
+        print(f"Error initializing Firebase: {e}")
 
 def require_auth(f):
     """Decorator to require Firebase Auth ID Token"""

@@ -39,20 +39,20 @@ class WasteToValueEngine:
 
         try:
             print("\n" + "="*60)
-            print(f"🥦 WASTE-TO-VALUE ANALYSIS ({language})")
+            print(f"WASTE-TO-VALUE ANALYSIS ({language})")
             print("="*60)
-            print(f"🌾 Crop: {crop_name}")
-            print("🔄 Invoking LLM for waste analysis...")
+            print(f"Crop: {crop_name}")
+            print("Invoking LLM for waste analysis...")
             
             response = chain.invoke({"input": crop_name, "language": language})
             
             # Accuracy Sanity Check
             self._validate_results(response)
             
-            print(f"✅ LLM Response Received & Validated")
-            print(f"📊 Options Generated: {len(response.get('options', []))}")
+            print(f"LLM Response Received & Validated")
+            print(f"Options Generated: {len(response.get('options', []))}")
             if response.get('conclusion'):
-                print(f"🎯 Recommendation: {response['conclusion'].get('title', 'N/A')}")
+                print(f"Recommendation: {response['conclusion'].get('title', 'N/A')}")
             print("="*60 + "\n")
             
             # Map to legacy schema for frontend compatibility
@@ -60,7 +60,7 @@ class WasteToValueEngine:
             
             return legacy_response
         except Exception as e:
-            print(f"❌ Error in WasteToValueEngine: {e}")
+            print(f"Error in WasteToValueEngine: {e}")
             import traceback
             traceback.print_exc()
             # Fallback/Error response structure
@@ -130,14 +130,14 @@ class WasteToValueEngine:
             if price_content:
                 content_str = " ".join(price_content)
                 if "₹" not in content_str and "INR" not in content_str.upper():
-                    print(f"⚠️ Warning: Missing currency in price for {opt.get('title')}")
+                    print(f"Warning: Missing currency in price for {opt.get('title')}")
             
             # Check for technical depth
             tech_content = opt.get("Technical Basis", [])
             if tech_content:
                 content_str = " ".join(tech_content).lower()
                 if "n/a" in content_str or "none" in content_str or "..." in content_str:
-                    print(f"⚠️ Warning: Weak technical basis for {opt.get('title')}")
+                    print(f"Warning: Weak technical basis for {opt.get('title')}")
         
         if len(options) < 1:
             raise ValueError("Generated 0 options; LLM failed to provide valid recommendations.")
@@ -180,24 +180,24 @@ class WasteToValueEngine:
             context_str = json.dumps(context, indent=2)
             
             print("\n" + "="*60)
-            print(f"💬 WASTE-TO-VALUE CHAT ({language})")
+            print(f"WASTE-TO-VALUE CHAT ({language})")
             print("="*60)
-            print(f"💭 User Question: {user_question}")
-            print(f"📚 Context Size: {len(context_str)} chars")
-            print("🔄 Invoking LLM for chat response...")
+            print(f"User Question: {user_question}")
+            print(f"Context Size: {len(context_str)} chars")
+            print("Invoking LLM for chat response...")
             
             response = chat_chain.invoke({
                 "context_str": context_str, 
                 "question": user_question
             })
             
-            print(f"✅ LLM Response Received ({len(response)} chars)")
-            print(f"📤 Response Preview: {response[:150]}..." if len(response) > 150 else f"📤 Full Response: {response}")
+            print(f"LLM Response Received ({len(response)} chars)")
+            print(f"Response Preview: {response[:150]}..." if len(response) > 150 else f"Full Response: {response}")
             print("="*60 + "\n")
             
             return response
         except Exception as e:
-            print(f"❌ Error in Waste Chat: {e}")
+            print(f"Error in Waste Chat: {e}")
             import traceback
             traceback.print_exc()
             return "I apologize, but I'm having trouble connecting to the knowledge base right now. Please try again."

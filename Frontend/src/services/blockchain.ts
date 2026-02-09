@@ -277,7 +277,7 @@ export const addVerifier = async (
     const owner = await registryContract.owner();
     const signer = registryContract.signer;
     const signerAddress = await signer.getAddress();
-    
+
     if (owner.toLowerCase() !== signerAddress.toLowerCase()) {
       throw new Error(
         `Permission Denied: Only the contract owner can add validators.\n\n` +
@@ -286,7 +286,7 @@ export const addVerifier = async (
         `Please switch to the admin wallet in MetaMask to add validators.`
       );
     }
-    
+
     const tx = await registryContract.addVerifier(verifierAddress);
     await tx.wait();
     return tx.hash;
@@ -294,9 +294,9 @@ export const addVerifier = async (
     // Check for "Not owner" error in various formats
     const errorMessage = error.message || '';
     const errorData = error.data || error.error?.data || '';
-    
+
     if (
-      errorMessage.includes('Not owner') || 
+      errorMessage.includes('Not owner') ||
       errorMessage.includes('execution reverted: Not owner') ||
       errorMessage.includes('Not owner') ||
       errorData.includes('4e6f74206f776e6572') || // "Not owner" in hex
@@ -306,10 +306,10 @@ export const addVerifier = async (
       let ownerAddress = 'unknown';
       try {
         ownerAddress = await registryContract.owner();
-      } catch {}
-      
+      } catch { }
+
       throw new Error(
-        `❌ Permission Denied: Only the contract owner can add validators.\n\n` +
+        `Permission Denied: Only the contract owner can add validators.\n\n` +
         `Your address: ${await registryContract.signer.getAddress()}\n` +
         `Required owner address: ${ownerAddress}\n\n` +
         `To add validators:\n` +
@@ -318,7 +318,7 @@ export const addVerifier = async (
         `3. Use the Administrator Panel to add validators`
       );
     }
-    
+
     throw new Error(`Failed to add verifier: ${error.message}`);
   }
 };
@@ -332,11 +332,11 @@ export const createProject = async (
   try {
     const tx = await registryContract.createProject(projectType, offChainHash);
     const receipt = await tx.wait();
-    
+
     // Get project ID from event
     const event = receipt.events?.find((e: any) => e.event === 'ProjectCreated');
     const projectId = event?.args?.projectId?.toNumber() ?? -1;
-    
+
     return { txHash: tx.hash, projectId };
   } catch (error: any) {
     throw new Error(`Failed to create project: ${error.message}`);
@@ -483,7 +483,7 @@ export const setupAccountListener = (
   callback: (accounts: string[]) => void
 ): (() => void) => {
   if (!isMetaMaskInstalled() || !window.ethereum) {
-    return () => {};
+    return () => { };
   }
 
   window.ethereum.on('accountsChanged', callback);
@@ -498,7 +498,7 @@ export const setupAccountListener = (
 // Listen for chain changes
 export const setupChainListener = (callback: (chainId: string) => void): (() => void) => {
   if (!isMetaMaskInstalled() || !window.ethereum) {
-    return () => {};
+    return () => { };
   }
 
   window.ethereum.on('chainChanged', callback);

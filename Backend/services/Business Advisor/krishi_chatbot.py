@@ -299,9 +299,9 @@ class KrishiSaarthiAdvisor:
                 num_predict=1500, # Maximum response length for detailed, comprehensive answers
                 base_url=DEFAULT_OLLAMA_BASE_URL,
             )
-            print("✅ ChatOllama LLM initialized successfully")
+            print("ChatOllama LLM initialized successfully")
         except Exception as e:
-            print(f"❌ Error initializing ChatOllama: {e}")
+            print(f"Error initializing ChatOllama: {e}")
             print(
                 "Make sure Ollama is running, the model is pulled,"
                 " and set OLLAMA_FORCE_CPU=0 if you want to try GPU mode."
@@ -335,7 +335,7 @@ class KrishiSaarthiAdvisor:
         # Chain: Prompt -> LLM -> String Output
         self.chain = prompt | self.llm | StrOutputParser()
         
-        print("✅ Runnable chain initialized")
+        print("Runnable chain initialized")
     
     def chat(self, user_message: str) -> str:
         """Send message and get response"""
@@ -347,11 +347,11 @@ class KrishiSaarthiAdvisor:
             clean_message = html.escape(user_message)
             
             print("\n" + "="*60)
-            print("🤖 LLM CHAT REQUEST")
+            print("LLM CHAT REQUEST")
             print("="*60)
-            print(f"📥 User Message: {clean_message}")
-            print(f"📚 Chat History Length: {len(self.chat_history)} messages")
-            print("🔄 Invoking LLM...")
+            print(f"User Message: {clean_message}")
+            print(f"Chat History Length: {len(self.chat_history)} messages")
+            print("Invoking LLM...")
             
             # Invoke chain with current history
             response = self.chain.invoke({
@@ -359,8 +359,8 @@ class KrishiSaarthiAdvisor:
                 "input": clean_message
             })
             
-            print(f"✅ LLM Response Received ({len(response)} chars)")
-            print(f"📤 Response Preview: {response[:200]}..." if len(response) > 200 else f"📤 Full Response: {response}")
+            print(f"LLM Response Received ({len(response)} chars)")
+            print(f"Response Preview: {response[:200]}..." if len(response) > 200 else f"Full Response: {response}")
             print("="*60 + "\n")
             
             # Update history manually
@@ -369,7 +369,7 @@ class KrishiSaarthiAdvisor:
             
             return response.strip()
         except Exception as e:
-            print(f"❌ Chat Error: {e}")
+            print(f"Chat Error: {e}")
             return f"Error: {str(e)}"
     
     def get_chat_history(self) -> str:
@@ -383,7 +383,7 @@ class KrishiSaarthiAdvisor:
     def clear_memory(self):
         """Clear conversation history"""
         self.chat_history = []
-        print("🗑️  Conversation memory cleared")
+        print("Conversation memory cleared")
 
     def generate_recommendations(self) -> List[dict]:
         """Generate top 3 business recommendations based on profile"""
@@ -437,18 +437,18 @@ class KrishiSaarthiAdvisor:
         
         try:
             print("\n" + "="*60)
-            print("🤖 LLM RECOMMENDATION GENERATION")
+            print("LLM RECOMMENDATION GENERATION")
             print("="*60)
-            print("🤔 Generating recommendations...")
-            print(f"📊 Farmer Profile: {self.profile.name}, Land: {self.profile.land_size} acres, Capital: ₹{self.profile.capital:,.0f}")
-            print("🔄 Invoking LLM for business recommendations...")
+            print("Generating recommendations...")
+            print(f"Farmer Profile: {self.profile.name}, Land: {self.profile.land_size} acres, Capital: ₹{self.profile.capital:,.0f}")
+            print("Invoking LLM for business recommendations...")
             
             # Use LLM directly for one-off generation
             response_msg = self.llm.invoke(prompt_text)
             response = response_msg.content
             
-            print(f"✅ LLM Response Received ({len(response)} chars)")
-            print(f"📄 Raw LLM Output (first 300 chars): {response[:300]}..." if len(response) > 300 else f"📄 Raw LLM Output: {response}")
+            print(f"LLM Response Received ({len(response)} chars)")
+            print(f"Raw LLM Output (first 300 chars): {response[:300]}..." if len(response) > 300 else f"Raw LLM Output: {response}")
             
             # Robust JSON extraction
             cleaned_response = response.strip()
@@ -467,13 +467,13 @@ class KrishiSaarthiAdvisor:
             # Try to parse JSON
             try:
                 recommendations = json.loads(cleaned_response)
-                print(f"✅ Successfully parsed {len(recommendations)} recommendations")
+                print(f"Successfully parsed {len(recommendations)} recommendations")
                 for i, rec in enumerate(recommendations, 1):
                     print(f"   {i}. {rec.get('title', 'N/A')} (Score: {rec.get('match_score', 0)})")
             except json.JSONDecodeError as json_err:
-                print(f"⚠️  JSON parse error: {json_err}")
-                print(f"📄 Raw response (first 500 chars): {response[:500]}")
-                print(f"🧹 Cleaned response (first 500 chars): {cleaned_response[:500]}")
+                print(f"Warning: JSON parse error: {json_err}")
+                print(f"Raw response (first 500 chars): {response[:500]}")
+                print(f"Cleaned response (first 500 chars): {cleaned_response[:500]}")
                 raise  # Re-raise to trigger fallback
             
             # Ensure we strictly have 3 items and they match our ID list
@@ -484,12 +484,12 @@ class KrishiSaarthiAdvisor:
             if not valid_recs:
                 raise ValueError("No valid recommendations generated")
             
-            print(f"✅ Returning {len(valid_recs[:3])} valid recommendations")
+            print(f"Returning {len(valid_recs[:3])} valid recommendations")
             print("="*60 + "\n")
             return valid_recs[:3]
             
         except Exception as e:
-            print(f"❌ Error generating recommendations: {e}")
+            print(f"Error generating recommendations: {e}")
             return self._get_fallback_recommendations()
 
     def _get_fallback_recommendations(self):
@@ -529,7 +529,7 @@ class KrishiSaarthiAdvisor:
 def collect_farmer_profile() -> FarmerProfile:
     """Interactive questionnaire to collect farmer data"""
     print("\n" + "="*60)
-    print("🌾 KRISHISAARTHI BUSINESS ADVISOR - FARMER PROFILING 🌾")
+    print("KRISHISAARTHI BUSINESS ADVISOR - FARMER PROFILING")
     print("="*60)
     print("\nPlease answer the following questions to help us assist you better:\n")
     
@@ -590,7 +590,7 @@ def collect_farmer_profile() -> FarmerProfile:
         language=language
     )
     
-    print("\n✅ Profile created successfully!\n")
+    print("\nProfile created successfully!\n")
     return profile
 
 
@@ -601,7 +601,7 @@ def collect_farmer_profile() -> FarmerProfile:
 def start_chat_interface(advisor: KrishiSaarthiAdvisor):
     """Interactive chat loop"""
     print("\n" + "="*60)
-    print("💬 CHAT WITH KRISHISAARTHI BUSINESS ADVISOR")
+    print("CHAT WITH KRISHISAARTHI BUSINESS ADVISOR")
     print("="*60)
     print("\nCommands:")
     print("  /profile - View your profile")
@@ -612,17 +612,17 @@ def start_chat_interface(advisor: KrishiSaarthiAdvisor):
     
     # Initial greeting
     greeting = advisor.chat("Hello! Please introduce yourself and ask how you can help me.")
-    print(f"🤖 KrishiSaarthi: {greeting}\n")
+    print(f"KrishiSaarthi: {greeting}\n")
     
     while True:
-        user_input = input("👤 You: ").strip()
+        user_input = input("You: ").strip()
         
         if not user_input:
             continue
         
         # Handle commands
         if user_input.lower() == "/exit":
-            print("\n👋 Thank you for using KrishiSaarthi! Best wishes for your business journey!")
+            print("\nThank you for using KrishiSaarthi! Best wishes for your business journey!")
             break
         
         elif user_input.lower() == "/profile":
@@ -631,7 +631,7 @@ def start_chat_interface(advisor: KrishiSaarthiAdvisor):
         
         elif user_input.lower() == "/history":
             history = advisor.get_chat_history()
-            print(f"\n📜 Chat History:\n{history}\n")
+            print(f"\nChat History:\n{history}\n")
             continue
         
         elif user_input.lower() == "/clear":
@@ -640,7 +640,7 @@ def start_chat_interface(advisor: KrishiSaarthiAdvisor):
         
         # Get AI response
         response = advisor.chat(user_input)
-        print(f"\n🤖 KrishiSaarthi: {response}\n")
+        print(f"\nKrishiSaarthi: {response}\n")
 
 
 # ============================================
@@ -649,7 +649,7 @@ def start_chat_interface(advisor: KrishiSaarthiAdvisor):
 
 def main():
     """Main entry point"""
-    print("\n🌾 Welcome to KrishiSaarthi Business Advisor!")
+    print("\nWelcome to KrishiSaarthi Business Advisor!")
     print("AI-powered business guidance for Indian farmers\n")
     
     # Step 1: Collect farmer profile

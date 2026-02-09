@@ -79,11 +79,11 @@ def load_disease_data():
     try:
         if CSV_PATH.exists():
             disease_data = pd.read_csv(str(CSV_PATH))
-            print("✅ Disease data CSV loaded successfully")
+            print("Disease data CSV loaded successfully")
         else:
-            print(f"⚠️  CSV file not found at {CSV_PATH}")
+            print(f"CSV file not found at {CSV_PATH}")
     except Exception as e:
-        print(f"❌ Error loading disease data: {e}")
+        print(f"Error loading disease data: {e}")
 
 # Load disease data on startup
 load_disease_data()
@@ -391,7 +391,7 @@ def delete_session(session_id):
 
 if __name__ == '__main__':
     print("\n" + "="*60)
-    print("🌾 KRISHISAARTHI BACKEND API SERVER")
+    print("KRISHISAARTHI BACKEND API SERVER")
     print("="*60)
     print("\nStarting server on http://localhost:5000")
     print("Endpoints:")

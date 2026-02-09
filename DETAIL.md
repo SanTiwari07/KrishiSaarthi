@@ -1,6 +1,6 @@
 # KrishiSaarthi - Project Documentation
 
-## 1️⃣ PROJECT OVERVIEW
+## 1. PROJECT OVERVIEW
 
 ### Project Name
 **KrishiSaarthi** (Derived from *Krishi* meaning Agriculture and *Saarthi* meaning Charioteer/Guide)
@@ -27,7 +27,7 @@ KrishiSaarthi is a "Phygital" (Physical + Digital) agricultural platform designe
 
 ---
 
-## 2️⃣ CORE CONCEPT & IDEA
+## 2. CORE CONCEPT & IDEA
 
 ### Concept in Simple Terms
 Imagine a digital assistant that acts as a doctor, financial advisor, and broker for a farmer.
@@ -45,30 +45,69 @@ The project started as a simple disease detection tool. However, we realized tha
 
 ---
 
-## 3️⃣ SYSTEM ARCHITECTURE
+## 3. SYSTEM ARCHITECTURE
 
 ### Overall System Flow
 1.  **User Interface (Frontend):** The user interacts with the React-based web app.
 2.  **Authentication:** User logs in via Firebase Auth; their role (Farmer/Validator/Buyer) determines their dashboard.
 3.  **AI Services (Backend):**
-    - **Disease Detection:** Image is sent to the Flask API $\rightarrow$ Processed by TensorFlow Model $\rightarrow$ Result returned.
+    - **Disease Detection:** Image is sent to the Flask API $\rightarrow$ Processed by TensorFlow Model & mapped to CSV Database $\rightarrow$ Result returned.
     - **Advisory:** Chat messages sent to Flask API $\rightarrow$ Processed by LangChain/LLM $\rightarrow$ Context-aware advice returned.
+    - **Waste-to-Value:** Waste data processed via Ollama (Local LLM) $\rightarrow$ Structured recycling/processing options returned.
 4.  **Database (Firestore):** Stores user profiles, application history, and non-blockchain metadata.
 5.  **Blockchain (Smart Contracts):** Handles the minting, transfer, and verification of Green Tokens using Ethereum/Polygon networks.
 
 ### Data Flow Diagram
 ```mermaid
 graph TD
-    User[User (Browser)] <-->|HTTPS| Frontend[React Frontend]
-    Frontend <-->|Auth| Firebase[Firebase Auth & Firestore]
-    Frontend <-->|API Calls| Backend[Python Flask Server]
-    Backend <-->|Inference| AI_Models[TensorFlow & LLM]
-    Frontend <-->|Web3| Blockchain[Ethereum/Polygon Smart Contracts]
+    subgraph Users ["User Role Dashboards"]
+        F[Farmer Dashboard]
+        V[Validator Dashboard]
+        B[Buyer Dashboard]
+    end
+
+    subgraph Frontend ["React PWA (Vite + Tailwind)"]
+        UI[Main User Interface]
+        AuthC[Auth/Web3 Context]
+    end
+
+    subgraph Backend ["AI Services (Python Flask)"]
+        direction TB
+        DD[Disease Detector<br/>TensorFlow API]
+        BA[Business Advisor<br/>LangChain LLM]
+        WV[Waste-to-Value<br/>Ollama Local LLM]
+        CSV[(Disease Database<br/>CSV)]
+    end
+
+    subgraph Infra ["Cloud & Blockchain Storage"]
+        FA[Firebase Auth]
+        FS[(Firestore DB<br/>Evidence & Profiles)]
+        BC[[Polygon Blockchain<br/>Smart Contracts]]
+    end
+
+    %% Interaction Flow
+    Users <--> UI
+    UI <--> AuthC
+    AuthC <--> FA
+
+    %% Data Flow
+    UI <-->|AI Inference| Backend
+    Backend --- CSV
+    
+    %% Storage & Trust
+    F -->|Upload Evidence| FS
+    V -->|Verify Evidence| FS
+    V -->|Mints Tokens| BC
+    F -->|Lists Credits| BC
+    B -->|Buys Tokens| BC
+    
+    UI <-->|Sync State| FS
+    UI <-->|Web3 Interaction| BC
 ```
 
 ---
 
-## 4️⃣ TECH STACK
+## 4. TECH STACK
 
 | Technology | Purpose | Why Chosen? | Alternatives |
 | :--- | :--- | :--- | :--- |
@@ -82,7 +121,7 @@ graph TD
 
 ---
 
-## 5️⃣ FOLDER & FILE STRUCTURE
+## 5. FOLDER & FILE STRUCTURE
 
 ### Root Directory
 - **/Frontend:** Contains the React application source code.
@@ -121,7 +160,7 @@ graph TD
 
 ---
 
-## 6️⃣ DETAILED CODE EXPLANATION
+## 6. DETAILED CODE EXPLANATION
 
 ### Feature: Disease Detection
 **Module:** `Backend/app.py` & `services/detector.py`
@@ -146,7 +185,7 @@ graph TD
 
 ---
 
-## 7️⃣ DATABASE DESIGN (Firestore)
+## 7. DATABASE DESIGN (Firestore)
 
 **Type:** NoSQL Document Store
 
@@ -165,7 +204,7 @@ graph TD
 
 ---
 
-## 8️⃣ API FLOW
+## 8. API FLOW
 
 ### Backend API (Flask)
 | Endpoint | Method | Purpose | request | response |
@@ -176,7 +215,7 @@ graph TD
 
 ---
 
-## 9️⃣ SECURITY CONSIDERATIONS
+## 9. SECURITY CONSIDERATIONS
 
 1.  **Authentication:** Strict reliance on Firebase Auth. No custom password handling.
 2.  **Role Verification:** Frontend checks are convenience only. **Critical:** Firestore security rules must be set to ensure a 'farmer' cannot read 'validator' data.
@@ -185,7 +224,7 @@ graph TD
 
 ---
 
-## 🔟 PERFORMANCE & SCALABILITY
+## 10 PERFORMANCE AND SCALABILITY
 
 - **Frontend:** Built with Vite for extremely fast loading. React components are lazy-loaded where possible.
 - **Backend:** Flask is lightweight. For scaling, this should be moved to a production-grade WSGI server (like Gunicorn) behind Nginx.
@@ -193,7 +232,7 @@ graph TD
 
 ---
 
-## 1️⃣1️⃣ DEPLOYMENT DETAILS
+## 11. DEPLOYMENT DETAILS
 
 The project follows a decoupled deployment strategy:
 
@@ -208,7 +247,7 @@ The project follows a decoupled deployment strategy:
 
 ---
 
-## 1️⃣2️⃣ CONFIGURATION & ENV FILES
+## 12. CONFIGURATION & ENV FILES
 
 ### Frontend `.env`
 Create this file in `/Frontend`:
@@ -226,7 +265,7 @@ Managed via `app.py` config variables (like `UPLOAD_FOLDER`). Ensure `requiremen
 
 ---
 
-## 1️⃣3️⃣ HOW TO RUN LOCALLY
+## 13. HOW TO RUN LOCALLY
 
 ### Prerequisites
 1.  Node.js installed.
@@ -259,7 +298,7 @@ python app.py
 
 ---
 
-## 1️⃣4️⃣ FUTURE IMPROVEMENTS
+## 14. FUTURE IMPROVEMENTS
 
 1.  **Smart Contract Audits:** Before real money usage, contracts need professional auditing.
 2.  **Offline Mode:** Enhance PWA capabilities for farmers with poor connectivity.
@@ -268,7 +307,7 @@ python app.py
 
 ---
 
-## 1️⃣5️⃣ LEARNING OUTCOMES
+## 15. LEARNING OUTCOMES
 
 By working on this project, developers gain skills in:
 - **Full Stack Integration:** Connecting React with Python AI services.
@@ -281,7 +320,7 @@ By working on this project, developers gain skills in:
 
 ---
 
-## 1️⃣6️⃣ TECHNICAL DEEP DIVE (Q&A)
+## 16. TECHNICAL DEEP DIVE (Q&A)
 
 ### Q1: How are languages translated?
 **Answer:**
@@ -306,12 +345,13 @@ The Business Advisor operates using a **Hybrid Intelligence Model**:
 The Blockchain layer acts as a **Trust & Verification Layer** for the Green Credit Marketplace. It is built on **Ethereum (EVM)** principles using **Solidity** smart contracts and connected via **Ethers.js**.
 1.  **Smart Contracts:**
     *   `Token Contract`: An ERC-20 standard token representing "Green Credits".
-    *   `Registry Contract`: Stores project details (Farmer ID, Crop Type, Verification Status).
-    *   `Marketplace Contract`: Allows holders to list their credits for sale and buyers to purchase them using ETH.
+    *   `Registry Contract`: Stores project metadata (Farmer ID, Project Type, Status).
+    *   `Marketplace Contract`: Allows trading of credits for ETH/Tokens.
 2.  **Flow:**
-    *   **Step 1 (Minting):** A Validator approves a farmer's activity. The `verifyAndMint` function is called on the Registry contract, which mints new tokens to the farmer's wallet.
-    *   **Step 2 (Listing):** The farmer calls `approve` on the Token contract and `createListing` on the Marketplace contract to sell their credits.
-    *   **Step 3 (Buying):** A buyer sends ETH to the `buy` function on the Marketplace contract. The contract swaps the ETH to the farmer and the Credits to the buyer atomically.
+    *   **Step 1 (Submission):** Farmer uploads sustainability evidence (photos/location) to **Firebase Firestore**.
+    *   **Step 2 (Verification):** A Validator reviews the Firestore evidence and confirms accuracy.
+    *   **Step 3 (Minting):** Upon approval, the `verifyAndMint` function is called on the Registry contract, minting tokens to the farmer's wallet.
+    *   **Step 4 (Trading):** The farmer lists credits on the Marketplace contract; buyers purchase them atomically.
 3.  **Network:** The app currently connects to the **Sepolia Testnet** for zero-cost testing.
 
 ### Q4: How is the Disease Detector working?
@@ -369,11 +409,11 @@ Several architectural choices contribute to the speed:
 
 ---
 
-## 1️⃣7️⃣ FILE DICTIONARY (What Each File Does)
+## 17. FILE DICTIONARY (What Each File Does)
 
 This index explains the specific purpose of every key file in the repository to help developers navigate the codebase.
 
-### 📂 Frontend - Pages (`/Frontend/src/pages`)
+### Frontend - Pages (`/Frontend/src/pages`)
 | File Name | Description | Key Features |
 | :--- | :--- | :--- |
 | **`Landing.tsx`** | The public home page. | Hero section with 3D elements, feature highlights, and 'Get Started' call-to-action. |
@@ -385,20 +425,20 @@ This index explains the specific purpose of every key file in the repository to 
 | **`BusinessAdvisor.tsx`** | The Hybrid Advisory System. | **Tab 1 (Form):** Collects user data (budget, land). **Tab 2 (Results):** Shows static business cards. **Tab 3 (Chat):** Live AI chat interface. |
 | **`GreenCredit.tsx`** | Credit management page for Farmers. | Allows farmers to submit new sustainability claims (photos/description) and view their earned credits. |
 
-### 📂 Frontend - Contexts (`/Frontend/src/contexts`)
+### Frontend - Contexts (`/Frontend/src/contexts`)
 | File Name | Description | Key Features |
 | :--- | :--- | :--- |
 | **`AppContext.tsx`** | The "Brain" of the Frontend. | Manages global State: User Profile (from Firebase), Current Language (English/Hindi/Marathi), and Translation Logic. |
 | **`BlockchainContext.tsx`** | The "Bridge" to Web3. | Connects to MetaMask, listens for account changes, and exposes Contract instances (Token, Registry, Marketplace) to the app. |
 | **`ThemeContext.tsx`** | UI Theme Manager. | Toggles between Light/Dark mode and persists preference in `localStorage`. |
 
-### 📂 Frontend - Services (`/Frontend/src/services`)
+### Frontend - Services (`/Frontend/src/services`)
 | File Name | Description | Key Features |
 | :--- | :--- | :--- |
 | **`blockchain.ts`** | Core Web3 Logic library. | Functions to `connectWallet`, `verifyAndMint`, `buyFromMarketplace`. Wraps Ethers.js complexity. |
 | **`contracts.ts`** | Smart Contract Config. | Contains the **ABI** (Application Binary Interface) JSONs and deployed **Contract Addresses** for Sepolia network. |
 
-### 📂 Backend (`/Backend`)
+### Backend (`/Backend`)
 | File Name | Description | Key Features |
 | :--- | :--- | :--- |
 | **`app.py`** | Main API Entry Point. | A Flask server that defines routes: `/api/disease/detect`, `/api/business-advisor/chat`. Orchestrates requests. |

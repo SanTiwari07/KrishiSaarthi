@@ -19,7 +19,7 @@ except ImportError as e:
     st.error(f"Error importing Business Advisor: {e}. Please ensure directory structure is correct.")
 
 def render_waste_to_value():
-    st.header("🌾 Agricultural Waste-to-Value Decision Engine")
+    st.header("Agricultural Waste-to-Value Decision Engine")
     st.markdown("""
     **Expert System for Indian Farmers**  
     *Converts crop name into ranked, actionable waste-to-value recommendations.*
@@ -48,7 +48,7 @@ def render_waste_to_value():
         # Process with Engine
         with st.chat_message("assistant"):
             message_placeholder = st.empty()
-            message_placeholder.markdown("🔄 *Analyzing crop decomposition and market pathways...*")
+            message_placeholder.markdown("*Analyzing crop decomposition and market pathways...*")
             
             try:
                 chain = get_decision_chain()
@@ -69,12 +69,12 @@ def render_waste_to_value():
                 message_placeholder.error(f"Error: {e}. (Ensure Ollama is running locally)")
 
 def render_business_advisor():
-    st.header("💼 KrishiSaarthi Business Advisor")
+    st.header("KrishiSaarthi Business Advisor")
     st.markdown("*AI-powered business guidance for Indian farmers*")
 
     # Check if profile exists
     if "advisor_profile" not in st.session_state:
-        st.subheader("📝 tell us about your resources")
+        st.subheader("tell us about your resources")
         
         with st.form("profile_form"):
             # Resources
@@ -142,7 +142,7 @@ def render_business_advisor():
             )
 
             st.markdown("---")
-            st.info("⚠️ **IMPORTANT NOTE**: All business ideas and data shown here are research-based and approximate. Actual costs and profits may vary by region, city, market demand, and season.")
+            st.info("**IMPORTANT NOTE**: All business ideas and data shown here are research-based and approximate. Actual costs and profits may vary by region, city, market demand, and season.")
             
             acknowledgement = st.checkbox("I have read and understood the above points and acknowledge that the data shown is indicative.")
             
@@ -186,7 +186,7 @@ def render_business_advisor():
         # Profile exists, show chat and options
         
         # Display Profile Summary (Collapsible)
-        with st.expander("👤 View Profile"):
+        with st.expander("View Profile"):
             st.text(st.session_state.advisor_profile.to_context())
             if st.button("Reset Profile"):
                 del st.session_state.advisor_profile
@@ -195,7 +195,7 @@ def render_business_advisor():
                 st.rerun()
                 
         # Recommendations Button
-        if st.button("🌟 Generate Business Recommendations"):
+        if st.button("Generate Business Recommendations"):
             with st.spinner("Analyzing profile and generating top business ideas..."):
                 recs = st.session_state.advisor_bot.generate_recommendations()
                 
@@ -307,11 +307,11 @@ def render_business_advisor():
                                 
                                 <div class="stats-container">
                                     <div class="stat-box">
-                                        <div class="stat-label">⚡ Investment</div>
+                                        <div class="stat-label">Investment</div>
                                         <div class="stat-value">{cost}</div>
                                     </div>
                                     <div class="stat-box">
-                                        <div class="stat-label">📈 Profit</div>
+                                        <div class="stat-label">Profit</div>
                                         <div class="stat-value">{profit}</div>
                                     </div>
                                 </div>
@@ -327,14 +327,14 @@ def render_business_advisor():
                         
                         # Buttons inside the card column (below the HTML card)
                         b_col1, b_col2 = st.columns(2)
-                        if b_col1.button("💬 Ask Chatbot", key=f"ask_{idx}"):
+                        if b_col1.button("Ask Chatbot", key=f"ask_{idx}"):
                             # Pre-fill chat input
                             st.session_state.ba_messages.append({"role": "user", "content": f"Tell me more about {title}"})
                             response = st.session_state.advisor_bot.chat(f"Tell me more about {title}")
                             st.session_state.ba_messages.append({"role": "assistant", "content": response})
                             st.rerun()
                             
-                        if b_col2.button("ℹ️ Know More", key=f"more_{idx}"):
+                        if b_col2.button("Know More", key=f"more_{idx}"):
                             st.session_state.ba_messages.append({"role": "user", "content": f"What are the detailed requirements for {title}?"})
                             response = st.session_state.advisor_bot.chat(f"What are the detailed requirements and steps for {title}?")
                             st.session_state.ba_messages.append({"role": "assistant", "content": response})
@@ -369,7 +369,7 @@ def render_business_advisor():
 def main():
     st.set_page_config(
         page_title="TechFiesta Agri-Engine",
-        page_icon="🌾",
+        page_icon="farm",
         layout="wide",
         initial_sidebar_state="expanded"
     )
@@ -387,7 +387,7 @@ def main():
     # The user asked for "two different sections", tabs act nicely as sections.
     # Let's use st.tabs for the main view to make it very distinct.
     
-    tab1, tab2 = st.tabs(["🚀 Waste to Value", "💼 Business Advisor"])
+    tab1, tab2 = st.tabs(["Waste to Value", "Business Advisor"])
     
     with tab1:
         render_waste_to_value()
