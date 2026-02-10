@@ -22,8 +22,11 @@ KrishiSaarthi is a "Phygital" (Physical + Digital) agricultural platform designe
 ### Key Features
 - **AI Crop Doctor:** Instant disease diagnosis from leaf photos with treatment suggestions.
 - **Business Advisor:** AI chatbot that recommends profitable agricultural businesses based on land, budget, and local conditions.
+- **Waste to Value:** AI-powered recommendations to convert crop waste into profitable products like bio-gas, compost, fibers, or organic fertilizers.
 - **Green Credit Marketplace:** A transparent blockchain platform where farmers trade carbon credits earned via sustainable farming.
-- **Role-Based Access:** tailored dashboards for Farmers, Validators, and Buyers.
+- **Farmer Onboarding:** Guided 3-step profile setup to collect personal, location, and farm details for personalized recommendations.
+- **Role-Based Access:** Tailored dashboards for Farmers, Validators, and Buyers.
+
 
 ---
 
@@ -41,7 +44,7 @@ The project started as a simple disease detection tool. However, we realized tha
 ### Why This Approach?
 - **AI over Manual Inspection:** Manual inspection is slow and expensive. AI scales instantly to millions of users.
 - **Blockchain over Centralized Database:** Blockchain ensures that Green Credits are unique, traceable, and cannot be forged. This builds trust with buyers who want to ensure their money actually supports green practices.
-- **Web App over Mobile App:** A PWA (Progressive Web App) model ensures accessibility on low-end devices without requiring large downlods.
+- **Web App over Mobile App:** A PWA (Progressive Web App) model ensures accessibility on low-end devices without requiring large downloads.
 
 ---
 
@@ -179,6 +182,47 @@ graph TD
     2.  Backend retrieves the `KrishiSaarthiAdvisor` instance for that session.
     3.  The request typically passes through an LLM (Large Language Model) chain or rule-based logic to generate advice tailored to the farmer's profile (land size, budget).
 
+### Feature: Waste to Value (Eco-Processing)
+**Module:** `Frontend/pages/WasteToValue.tsx` & `Backend/services/WasteToValue`
+- **Purpose:** Helps farmers convert agricultural waste into profitable products using AI-powered recommendations.
+- **Logic:**
+    1.  **Input Phase:** Farmer enters crop waste type (e.g., "Banana pseudostems", "Rice straw").
+    2.  **Processing Phase:** Frontend sends request to `/api/waste-to-value/analyze` endpoint.
+    3.  **AI Analysis:** Backend uses **Ollama (Local LLM)** to analyze waste composition and generate structured recommendations.
+    4.  **Results Display:** Returns 3 profitable options, each containing:
+        - **Title:** Product name (e.g., "Banana Fiber Production")
+        - **Subtitle:** Brief description
+        - **Full Details:** Processing steps, equipment needed, market potential, investment required
+    5.  **Conclusion:** AI recommends the most suitable option based on profitability and feasibility.
+    6.  **Interactive Chat:** Built-in chatbot (`/api/waste-to-value/chat`) answers follow-up questions about implementation.
+- **View States:** The component uses 3 states: `input` (form), `processing` (loading animation), `results` (cards + chat).
+- **Modal System:** "Know More" button opens detailed modal with step-by-step processing guide.
+
+### Feature: Farmer Onboarding
+**Module:** `Frontend/pages/Onboarding.tsx` & `hooks/useOnboardingStateMachine`
+- **Purpose:** Collects comprehensive farmer profile data through a guided 3-step wizard.
+- **State Management:** Uses custom state machine pattern for robust multi-step flow with validation and persistence.
+- **Step Breakdown:**
+    - **Step 1 - Personal Information:**
+        - Full Name (required)
+        - Age (required, 18-100)
+        - Email (optional)
+        - Residential Address (optional)
+        - Mobile number is pre-filled from signup
+    - **Step 2 - Location Details:**
+        - State (required)
+        - District (required)
+        - Village/Town (required)
+    - **Step 3 - Farm Details:**
+        - Land Size in Acres (required, decimal allowed)
+        - Soil Type (dropdown: Alluvial, Black, Red, Laterite, Mixed)
+        - Water Source (selectable: Borewell, Canal, Rainfed, Mixed)
+        - Main Crops Grown (multi-select chips: Wheat, Rice, Maize, Cotton, Sugarcane, Soybean, Pulses)
+        - Other Crop (text input for crops not in the list)
+- **Data Persistence:** All data is saved to Firestore `users` collection after each step completion.
+- **Completion:** After Step 3, the user's `onboardingCompleted` flag is set to `true`, and they are redirected to the Farmer Dashboard.
+- **UI Features:** Progress indicator, back navigation, validation errors, smooth animations.
+
 ### Feature: Role-Based Routing
 **Module:** `Frontend/components/ProtectedRoute.tsx`
 - **Logic:** Checks the user's role stored in `AppContext`. If the user matches `allowedRoles` (e.g., 'farmer'), it renders the child component. If not, it redirects to the login or home page.
@@ -224,7 +268,7 @@ graph TD
 
 ---
 
-## 10 PERFORMANCE AND SCALABILITY
+## 10. PERFORMANCE AND SCALABILITY
 
 - **Frontend:** Built with Vite for extremely fast loading. React components are lazy-loaded where possible.
 - **Backend:** Flask is lightweight. For scaling, this should be moved to a production-grade WSGI server (like Gunicorn) behind Nginx.
@@ -407,6 +451,63 @@ Several architectural choices contribute to the speed:
 3.  **Optimized Assets:** The app uses SVG icons (Lucide-React) instead of heavy image files where possible, and Tailwind generates minimal CSS bundles by purging unused styles.
 4.  **No unnecessary re-renders:** The architecture separates `BlockchainContext` (heavy Web3 logic) from `AppContext` (UI state), preventing blockchain updates from causing lag in the UI.
 
+### Q9: How does the Waste to Value feature work?
+**Answer:**
+The Waste to Value feature uses **Ollama (Local LLM)** to provide AI-powered recommendations for converting agricultural waste into profitable products.
+1.  **Input Collection:** The farmer enters the type of crop waste they have (e.g., "Banana pseudostems", "Rice straw", "Sugarcane bagasse").
+2.  **API Request:** The frontend sends a POST request to `/api/waste-to-value/analyze` with the crop type and preferred language.
+3.  **AI Processing:** The backend uses Ollama to:
+    *   Analyze the waste composition and properties
+    *   Generate 3 profitable product options (e.g., Bio-gas, Compost, Fiber products)
+    *   For each option, provide: title, subtitle, basic idea, processing steps, equipment needed, market potential, and investment estimates
+    *   Recommend the most suitable option based on profitability and feasibility
+4.  **Results Display:** The frontend shows:
+    *   **3 Product Cards:** Each with a "Know More" button that opens a detailed modal
+    *   **Conclusion Section:** Highlights the best option with explanation
+    *   **Interactive Chatbot:** Allows farmers to ask follow-up questions about implementation
+5.  **Chat Functionality:** The `/api/waste-to-value/chat` endpoint maintains context and answers specific questions about the recommendations.
+
+### Q10: How does the Farmer Onboarding flow work?
+**Answer:**
+The onboarding system uses a **State Machine Pattern** to ensure data integrity and smooth user experience.
+1.  **State Machine Hook:** `useOnboardingStateMachine` manages:
+    *   Current step (1, 2, or 3)
+    *   Validation errors
+    *   Loading states
+    *   Navigation (next/back)
+    *   Firebase persistence
+2.  **Step-by-Step Flow:**
+    *   **Step 1 (Personal):** Collects name, age, email, address. Mobile is pre-filled from signup. Data is validated (age 18-100) and saved to Firestore.
+    *   **Step 2 (Location):** Collects state, district, village. All fields are required. Data is appended to the user's Firestore document.
+    *   **Step 3 (Farm):** Collects land size, soil type, water source, and crops. Supports multi-select for crops with custom "other" option.
+3.  **Validation:** Each step validates required fields before allowing progression. Errors are displayed as toast notifications.
+4.  **Persistence:** Data is saved to Firestore after each step, so if the user closes the browser, they can resume from where they left off.
+5.  **Completion:** After Step 3, the `onboardingCompleted` flag is set to `true`, the user's display name is updated, and they are redirected to the Farmer Dashboard.
+6.  **UI Features:** Progress indicator shows current step, back button allows correction, smooth animations enhance UX.
+
+### Q11: How are translations managed across all features?
+**Answer:**
+The translation system is **fully custom** and optimized for performance:
+1.  **Storage:** All translations are stored in a single JavaScript object in `AppContext.tsx`. The structure is:
+    ```javascript
+    translations = {
+      'key.name': { en: 'English', hi: 'हिंदी', mr: 'मराठी' }
+    }
+    ```
+2.  **Global State:** The current language (`'en' | 'hi' | 'mr'`) is stored in `AppContext` and persisted in `localStorage`.
+3.  **Translation Function:** Components use the `t(key)` helper function:
+    ```javascript
+    const { t } = useApp();
+    <h1>{t('welcome.message')}</h1>
+    ```
+4.  **Fallback Logic:** If a translation key is missing for the current language, it falls back to English. If English is also missing, it returns the key itself.
+5.  **Language Switching:** When the user changes language in Settings:
+    *   The global state updates
+    *   All components using `t()` re-render automatically
+    *   The preference is saved to `localStorage`
+6.  **Performance:** Since translations are bundled with the app (not fetched), language switching is instant (0ms latency).
+7.  **Coverage:** All user-facing text across Disease Detector, Business Advisor, Waste to Value, Green Credits, and Dashboards is translated.
+
 ---
 
 ## 17. FILE DICTIONARY (What Each File Does)
@@ -418,11 +519,13 @@ This index explains the specific purpose of every key file in the repository to 
 | :--- | :--- | :--- |
 | **`Landing.tsx`** | The public home page. | Hero section with 3D elements, feature highlights, and 'Get Started' call-to-action. |
 | **`AuthPage.tsx`** | Combined Login and Signup interface. | Handles Toggle between Login/Signup, Role Selection (Farmer/Validator/Buyer), and form validation. |
-| **`FarmerDashboard.tsx`** | Main control center for Farmers. | Displays "Your Impact" stats, quick links to Disease Detector, Business Advisor, and Green Credits. |
+| **`Onboarding.tsx`** | 3-step farmer profile wizard. | Collects Personal Info (Step 1), Location (Step 2), and Farm Details (Step 3). Uses state machine pattern with validation and Firebase persistence. |
+| **`FarmerDashboard.tsx`** | Main control center for Farmers. | Displays "Your Impact" stats, quick links to Disease Detector, Business Advisor, Waste to Value, and Green Credits. |
 | **`ValidatorDashboard.tsx`** | Interface for Validators/Verifiers. | Fetches pending credit requests, allows viewing evidence images, and buttons to Approve (Mint) or Reject claims. |
 | **`BuyerDashboard.tsx`** | Marketplace view for Buyers. | Lists available carbon credits for sale (from Blockchain), allows filtering, and executing purchase transactions. |
 | **`CropDiseaseDetector.tsx`** | UI for the AI Disease Detection feature. | Handles image upload, sends it to Backend API, and displays the returned disease diagnosis + treatment. |
 | **`BusinessAdvisor.tsx`** | The Hybrid Advisory System. | **Tab 1 (Form):** Collects user data (budget, land). **Tab 2 (Results):** Shows static business cards. **Tab 3 (Chat):** Live AI chat interface. |
+| **`WasteToValue.tsx`** | Crop waste recycling advisor. | 3-view system (input/processing/results). AI analyzes waste and suggests 3 profitable products. Includes interactive chatbot and detailed modal views. |
 | **`GreenCredit.tsx`** | Credit management page for Farmers. | Allows farmers to submit new sustainability claims (photos/description) and view their earned credits. |
 
 ### Frontend - Contexts (`/Frontend/src/contexts`)
@@ -441,43 +544,12 @@ This index explains the specific purpose of every key file in the repository to 
 ### Backend (`/Backend`)
 | File Name | Description | Key Features |
 | :--- | :--- | :--- |
-| **`app.py`** | Main API Entry Point. | A Flask server that defines routes: `/api/disease/detect`, `/api/business-advisor/chat`. Orchestrates requests. |
-| **`services/detector.py`** | AI Inference Module. | Loads the `.h5` model, pre-processes images (resizing/normalization), and runs prediction. |
-| **`services/krishi_chatbot.py`** | Advisory Logic Module. | Contains the `KrishiSaarthiAdvisor` class. Generates business advice based on farmer inputs using logic or LLM. |
+| **`app.py`** | Main API Entry Point. | A Flask server that defines routes: `/api/disease/detect`, `/api/business-advisor/chat`, `/api/waste-to-value/analyze`, `/api/waste-to-value/chat`. Orchestrates requests. |
+| **`services/Disease Detector/`** | Disease Detection Service. | Contains the TensorFlow model (`.h5`), prediction logic, and disease database CSV for crop disease identification. |
+| **`services/Business Advisor/krishi_chatbot.py`** | Advisory Logic Module. | Contains the `KrishiSaarthiAdvisor` class. Generates business advice based on farmer inputs using LangChain or LLM. |
+| **`services/WasteToValue/`** | Waste Recycling Service. | Uses Ollama (Local LLM) to analyze crop waste and generate structured recommendations for converting waste into profitable products. |
 | **`services/crop_disease_data.csv`**| Static Knowledge Base. | A database file mapping "Disease Name" $\rightarrow$ "Cure/Chemical/Home Remedy". Used by `app.py` to enrich AI results. |
 | **`plant_disease_model.h5`** | The Brain (AI Model). | A binary file containing the pre-trained Convolutional Neural Network (CNN) weights for disease classification. |
 
 ---
-
-
-### Q6: How does Dark Mode work?
-**Answer:**
-Dark mode is implemented using a **CSS-Class Strategy** combined with **Tailwind CSS**.
-1.  **Configuration:** The `tailwind.config.js` is set to `darkMode: 'class'`. This tells Tailwind to apply styles prefixed with `dark:` (e.g., `dark:bg-gray-900`) *only* when the `dark` class is present on a parent element.
-2.  **Context:** The `ThemeContext.tsx` provider manages the current theme state (`'light'` or `'dark'`).
-3.  **Persistence:** When the app loads, it checks `localStorage` for a saved preference.
-4.  **Toggling:** When the user clicks the toggle button:
-    *   The state updates.
-    *   The `dark` class is strictly added or removed from the `<html>` (root) element: `document.documentElement.classList.toggle('dark', isDark)`.
-    *   The new preference is saved to `localStorage`.
-
-### Q7: How is user access controlled?
-**Answer:**
-We use a **Client-Side Protection wrapper**:
-1.  **Component:** `ProtectedRoute.tsx` acts as a gatekeeper for private routes.
-2.  **Logic:** It consumes the `user` object from `AppContext`.
-    *   **Check 1 (Auth):** If `user` is null, it immediately redirects to `/login`.
-    *   **Check 2 (Role):** It accepts an `allowedRoles` array props (e.g., `['farmer']`). If `user.role` is not in this list, it redirects to the home page.
-3.  **Security Note:** While this prevents normal users from seeing unauthorized pages, vital data is further protected by **Firestore Security Rules** on the backend, ensuring that even if a user bypasses the UI, they cannot read restricted data.
-
-### Q8: What makes the application fast?
-**Answer:**
-Several architectural choices contribute to the speed:
-1.  **Vite Build Tool:** Unlike Create-React-App (Webpack), Vite serves source code over native ESM, making development feedback instant and production builds highly optimized.
-2.  **Local State for Translations:** Instead of fetching translation files from a server, they are bundled directly into the JS chunk (`AppContext.tsx`). This means 0ms latency when switching languages.
-3.  **Optimized Assets:** The app uses SVG icons (Lucide-React) instead of heavy image files where possible, and Tailwind generates minimal CSS bundles by purging unused styles.
-4.  **No unnecessary re-renders:** The architecture separates `BlockchainContext` (heavy Web3 logic) from `AppContext` (UI state), preventing blockchain updates from causing lag in the UI.
-
----
-
 

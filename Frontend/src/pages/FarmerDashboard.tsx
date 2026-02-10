@@ -213,8 +213,8 @@ export default function FarmerDashboard() {
             </nav>
 
             {/* Main Dashboard Content */}
-            <div className="flex-grow overflow-hidden py-2">
-                <div className="max-w-7xl mx-auto px-4 pb-4 h-full flex items-center">
+            <div className="flex-grow overflow-y-auto py-2">
+                <div className="max-w-7xl mx-auto px-4 pb-4 min-h-full flex items-center">
 
 
                     <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 w-full">

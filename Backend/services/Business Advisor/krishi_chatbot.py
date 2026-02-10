@@ -446,6 +446,7 @@ class KrishiSaarthiAdvisor:
             # Use LLM directly for one-off generation
             response_msg = self.llm.invoke(prompt_text)
             response = response_msg.content
+
             
             print(f"LLM Response Received ({len(response)} chars)")
             print(f"Raw LLM Output (first 300 chars): {response[:300]}..." if len(response) > 300 else f"Raw LLM Output: {response}")

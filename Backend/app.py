@@ -239,8 +239,14 @@ def init_advisor():
         print(f"Active Sessions: {len(advisor_sessions)}")
         
         print("Generating recommendations...")
-        recommendations = advisor.generate_recommendations()
-        print(f"Init Complete - Returning {len(recommendations)} recommendations")
+        try:
+            recommendations = advisor.generate_recommendations()
+            print(f"Init Complete - Returning {len(recommendations)} recommendations")
+        except Exception as rec_err:
+             print(f"Error generating recommendations: {rec_err}")
+             recommendations = advisor._get_fallback_recommendations()
+             print(f"Returning {len(recommendations)} fallback recommendations")
+        
         print("="*60 + "\n")
         
         return jsonify({
