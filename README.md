@@ -68,7 +68,7 @@ We conducted extensive on-ground research to validate the problem statement. Our
 | Layer | Technologies |
 |-------|--------------|
 | **Frontend** | React, TypeScript, Vite, Tailwind CSS, Framer Motion |
-| **Backend AI** | Python, TensorFlow/Keras, LangChain, Ollama (Local LLM), Flask/FastAPI |
+| **Backend AI** | Python, TensorFlow/Keras, LangChain, **Ollama (GPU Accelerated)**, Flask/FastAPI |
 | **Blockchain** | Solidity, Hardhat, Ethers.js, MetaMask |
 | **Database** | Firebase Firestore (User Profiles, Role Management) |
 | **Auth** | Firebase Authentication |
@@ -76,11 +76,21 @@ We conducted extensive on-ground research to validate the problem statement. Our
 
 ---
 
+## Hardware Recommendations
+
+For optimal performance of the AI services:
+- **GPU**: NVIDIA GPU with 4GB+ VRAM (e.g., GTX 1650 or higher) is highly recommended for **Ollama (LLM)**.
+- **CUDA**: Ensure NVIDIA CUDA Drivers are installed to enable hardware acceleration.
+- **RAM**: 8GB Minimum (16GB Recommended).
+
+---
+
 ## Getting Started
 
 ### Prerequisites
 - **Node.js** (v18+)
-- **Python** (v3.9+)
+- **Python** (v3.9 - v3.10 recommended for GPU-based TensorFlow support on Windows)
+- **Ollama** (Running locally with `llama3.2` model)
 - **MetaMask Wallet** (Browser Extension)
 - **Git**
 

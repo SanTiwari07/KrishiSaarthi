@@ -56,7 +56,7 @@ The project started as a simple disease detection tool. However, we realized tha
 3.  **AI Services (Backend):**
     - **Disease Detection:** Image is sent to the Flask API $\rightarrow$ Processed by TensorFlow Model & mapped to CSV Database $\rightarrow$ Result returned.
     - **Advisory:** Chat messages sent to Flask API $\rightarrow$ Processed by LangChain/LLM $\rightarrow$ Context-aware advice returned.
-    - **Waste-to-Value:** Waste data processed via Ollama (Local LLM) $\rightarrow$ Structured recycling/processing options returned.
+    - **Waste-to-Value:** Waste data processed via **Ollama (GPU Accelerated Local LLM)** $\rightarrow$ Structured recycling/processing options returned.
 4.  **Database (Firestore):** Stores user profiles, application history, and non-blockchain metadata.
 5.  **Blockchain (Smart Contracts):** Handles the minting, transfer, and verification of Green Tokens using Ethereum/Polygon networks.
 
@@ -117,6 +117,7 @@ graph TD
 | **React (Vite)** | Frontend UI | Component-based, fast updates, excellent ecosystem. | Angular, Vue |
 | **Tailwind CSS** | Styling | Rapid development, consistent design system. | Bootstrap, SCSS |
 | **Python (Flask)** | Backend API | Essential for running AI/ML models easily. | Django, FastAPI |
+| **Ollama** | Local LLM | Provides privacy and **GPU-accelerated** performance for chat/logic. | OpenAI API, HuggingFace |
 | **Firebase** | Auth & DB | Real-time updates, serverless, easy scaling. | AWS, Supabase |
 | **TensorFlow** | AI Model | Robust framework for image classification. | PyTorch |
 | **Solidity** | Blockchain | Standard for Ethereum Virtual Machine (EVM). | Rust (Solana) |
@@ -456,8 +457,8 @@ Several architectural choices contribute to the speed:
 The Waste to Value feature uses **Ollama (Local LLM)** to provide AI-powered recommendations for converting agricultural waste into profitable products.
 1.  **Input Collection:** The farmer enters the type of crop waste they have (e.g., "Banana pseudostems", "Rice straw", "Sugarcane bagasse").
 2.  **API Request:** The frontend sends a POST request to `/api/waste-to-value/analyze` with the crop type and preferred language.
-3.  **AI Processing:** The backend uses Ollama to:
-    *   Analyze the waste composition and properties
+3.  **AI Processing:** The backend uses **Ollama** to analyze waste composition. For best performance, this runs on the **NVIDIA GPU** using CUDA acceleration. It performs the following:
+    *   Analyzes the waste composition and properties
     *   Generate 3 profitable product options (e.g., Bio-gas, Compost, Fiber products)
     *   For each option, provide: title, subtitle, basic idea, processing steps, equipment needed, market potential, and investment estimates
     *   Recommend the most suitable option based on profitability and feasibility
