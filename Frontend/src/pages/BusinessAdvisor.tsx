@@ -254,7 +254,7 @@ export default function BusinessAdvisor() {
             ]);
         } catch (err) {
             console.error(err);
-            setMessages(prev => [...prev, { id: 'err', sender: 'ai', text: 'I noticed the disease report but could not fetch specific advice right now. Please ask me about the symptoms.', timestamp: new Date() }]);
+            setMessages(prev => [...prev, { id: `err-${Date.now()}`, sender: 'ai', text: 'I noticed the disease report but could not fetch specific advice right now. Please ask me about the symptoms.', timestamp: new Date() }]);
         } finally {
             setIsLoading(false);
         }
@@ -292,7 +292,7 @@ export default function BusinessAdvisor() {
                 setSessionId(d.session_id);      // Update state for next render
             } catch (e) {
                 console.error(e);
-                setMessages(prev => [...prev, { id: 'err', sender: 'ai', text: 'Error initializing session. Please try again.', timestamp: new Date() }]);
+                setMessages(prev => [...prev, { id: `err-${Date.now()}`, sender: 'ai', text: 'Error initializing session. Please try again.', timestamp: new Date() }]);
                 return;
             }
         }
@@ -321,7 +321,18 @@ export default function BusinessAdvisor() {
             }
 
             const token = await auth.currentUser?.getIdToken();
-            const response = await fetch(`${API_BASE_URL}/business-advisor/chat`, {
+
+            // Create a placeholder AI message for streaming
+            const aiMsgId = (Date.now() + 1).toString();
+            const initialAiMsg: ChatMessage = {
+                id: aiMsgId,
+                sender: 'ai',
+                text: '',
+                timestamp: new Date()
+            };
+            setMessages(prev => [...prev, initialAiMsg]);
+
+            const response = await fetch(`${API_BASE_URL}/business-advisor/chat/stream`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -333,18 +344,41 @@ export default function BusinessAdvisor() {
                 })
             });
 
-            if (!response.ok) throw new Error('Failed to get response');
-            const data = await response.json();
+            if (!response.ok) throw new Error('Failed to connect to streaming API');
 
-            const aiMsg: ChatMessage = {
-                id: (Date.now() + 1).toString(),
-                sender: 'ai',
-                text: data.response,
-                timestamp: new Date()
-            };
-            setMessages(prev => [...prev, aiMsg]);
+            const reader = response.body?.getReader();
+            if (!reader) throw new Error('ReadableStream not supported');
+
+            const decoder = new TextDecoder();
+            let accumulatedResponse = '';
+
+            // Consume the stream
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+
+                const chunk = decoder.decode(value, { stream: true });
+                const lines = chunk.split('\n');
+
+                for (const line of lines) {
+                    if (line.startsWith('data: ')) {
+                        try {
+                            const data = JSON.parse(line.slice(6));
+                            if (data.chunk) {
+                                accumulatedResponse += data.chunk;
+                                // Update the messages array with the accumulated text
+                                setMessages(prev => prev.map(msg =>
+                                    msg.id === aiMsgId ? { ...msg, text: accumulatedResponse } : msg
+                                ));
+                            }
+                        } catch (e) {
+                            console.error('Error parsing SSE chunk:', e);
+                        }
+                    }
+                }
+            }
         } catch (err) {
-            setMessages(prev => [...prev, { id: 'err', sender: 'ai', text: 'Sorry, I am having trouble connecting. Please try again.', timestamp: new Date() }]);
+            setMessages(prev => [...prev, { id: `err-${Date.now()}`, sender: 'ai', text: 'Sorry, I am having trouble connecting. Please try again.', timestamp: new Date() }]);
         } finally {
             setIsLoading(false);
         }

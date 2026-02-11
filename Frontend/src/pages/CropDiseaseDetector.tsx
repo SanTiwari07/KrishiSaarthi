@@ -50,7 +50,16 @@ export default function CropDiseaseDetector() {
             const formData = new FormData();
             formData.append('image', file);
 
-            const token = await auth.currentUser?.getIdToken();
+            const user = auth.currentUser;
+            console.log('Current Firebase User:', user?.email, 'UID:', user?.uid);
+
+            if (!user) {
+                throw new Error('You must be logged in to analyze images. Please log in again.');
+            }
+
+            const token = await user.getIdToken(true); // Force refresh to be sure
+            console.log('Generated ID Token (first 10):', token.substring(0, 10));
+
             const response = await fetch(`${API_BASE_URL}/disease/detect`, {
                 method: 'POST',
                 headers: {

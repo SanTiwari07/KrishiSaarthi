@@ -15,25 +15,23 @@ def init_firebase():
             cred_path = os.path.join(base_dir, cred_path)
             
         if not os.path.exists(cred_path):
-            print(f"Warning: Firebase credentials not found at {cred_path}")
-            print("   Auth middleware will fail efficiently. Please add serviceAccountKey.json")
+            print(f"[AUTH] Warning: Firebase credentials not found at {cred_path}. Auth middleware will be disabled.")
             return
 
         cred = credentials.Certificate(cred_path)
-        firebase_admin.initialize_app(cred)
-        print("Firebase Admin SDK initialized")
+        app = firebase_admin.initialize_app(cred)
+        print(f"[AUTH] Service Account: {app.project_id}")
     except ValueError:
         # App already initialized
         pass
     except Exception as e:
-        print(f"Error initializing Firebase: {e}")
+        print(f"[AUTH] Error initializing Firebase: {e}")
 
 def require_auth(f):
     """Decorator to require Firebase Auth ID Token"""
     @wraps(f)
     def decorated_function(*args, **kwargs):
         # Allow OPTIONS requests (CORS preflight) to pass through without auth
-        # Return empty response - Flask-CORS will add the CORS headers
         if request.method == 'OPTIONS':
             return '', 200
         
@@ -43,18 +41,27 @@ def require_auth(f):
         
         try:
             # Expected format: "Bearer <token>"
-            token = auth_header.split(" ")[1]
+            parts = auth_header.split(" ")
+            if len(parts) < 2:
+                 return jsonify({'error': 'Invalid Authorization header format. Expected "Bearer <token>"'}), 401
+            
+            token = parts[1]
+            if not token or token == 'undefined' or token == 'null':
+                print(f"[AUTH] Error: Missing or invalid token literal ('{token}')")
+                return jsonify({'error': 'No token provided or token is "undefined"'}), 401
+
+            # Verifying token
             decoded_token = auth.verify_id_token(token)
-            request.user = decoded_token # Attach user info to request
+            request.user = decoded_token 
             return f(*args, **kwargs)
-        except IndexError:
-            return jsonify({'error': 'Invalid Authorization header format. Expected "Bearer <token>"'}), 401
         except auth.ExpiredIdTokenError:
+            print("[AUTH] Error: Token expired")
             return jsonify({'error': 'Token expired'}), 401
-        except auth.InvalidIdTokenError:
-            return jsonify({'error': 'Invalid token'}), 401
+        except auth.InvalidIdTokenError as e:
+            print(f"[AUTH] Error: Invalid token - {e}")
+            return jsonify({'error': f'Invalid token: {str(e)}'}), 401
         except Exception as e:
-            print(f"Auth Error: {e}")
+            print(f"[AUTH] Error (Unexpected): {type(e).__name__}: {e}")
             return jsonify({'error': 'Authentication failed'}), 401
             
     return decorated_function

@@ -1,5 +1,5 @@
 
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, Response
 from flask_cors import CORS
 from flask_talisman import Talisman
 from dotenv import load_dotenv
@@ -8,6 +8,7 @@ import sys
 from pathlib import Path
 from werkzeug.utils import secure_filename
 import pandas as pd
+import json
 from middleware.auth import init_firebase, require_auth
 
 # Load environment variables
@@ -49,7 +50,11 @@ DISEASE_DETECTOR_DIR = Path(__file__).resolve().parent / 'services' / 'Disease D
 if str(DISEASE_DETECTOR_DIR) not in sys.path:
     sys.path.append(str(DISEASE_DETECTOR_DIR))
 
-from detector import predict as detector_predict
+from detector import predict as detector_predict, init_model as detector_init
+
+# Warm up the model on server start
+detector_init()
+
 MODEL_FILE = DISEASE_DETECTOR_DIR / 'plant_disease_model.h5'
 CSV_PATH = DISEASE_DETECTOR_DIR / 'crop_disease_data.csv'
 
@@ -136,28 +141,23 @@ def health_check():
 @require_auth
 def detect_disease():
     try:
-        print("=== Disease Detection Request Received ===")
         if 'image' not in request.files:
-            print("Error: No image file in request")
             return jsonify({'error': 'No image file provided'}), 400
         file = request.files['image']
         if file.filename == '':
-            print("Error: Empty filename")
             return jsonify({'error': 'No file selected'}), 400
         if not allowed_file(file.filename):
-            print(f"Error: Invalid file type: {file.filename}")
             return jsonify({'error': 'Invalid file type'}), 400
         
         filename = secure_filename(file.filename)
-        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-        print(f"Saving file to: {filepath}")
-        file.save(filepath)
+        image_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        file.save(image_path)
         
-        print("Calling predict_disease...")
-        prediction = predict_disease(filepath)
-        print(f"Prediction result: {prediction}")
+        print(f"[SCAN] Request received: {filename}")
+        result = predict_disease(image_path)
+        print(f"[SCAN] Result: {result.get('disease')} ({int(result.get('confidence',0)*100)}%)")
         
-        disease_info = get_disease_info(prediction['crop'], prediction['disease'])
+        disease_info = get_disease_info(result['crop'], result['disease'])
         
         treatment = []
         if disease_info:
@@ -168,23 +168,22 @@ def detect_disease():
         else:
             treatment = ['Remove affected leaves', 'Apply fungicide']
             
-        try: os.remove(filepath)
+        try: os.remove(image_path)
         except: pass
         
-        print("Sending successful response")
         return jsonify({
             'success': True,
             'result': {
-                'crop': prediction['crop'],
-                'disease': prediction['disease'],
-                'severity': prediction['severity'],
-                'confidence': prediction['confidence'],
+                'crop': result['crop'],
+                'disease': result['disease'],
+                'severity': result['severity'],
+                'confidence': result['confidence'],
                 'treatment': treatment,
                 'pathogen': disease_info['pathogen'] if disease_info else None
             }
         })
     except Exception as e:
-        print(f"ERROR in detect_disease: {e}")
+        print(f"[SCAN] Error: {e}")
         import traceback
         traceback.print_exc()
         return jsonify({'error': str(e)}), 500
@@ -194,26 +193,20 @@ def detect_disease():
 @require_auth
 def init_advisor():
     try:
-        print("\n" + "="*60)
-        print("BUSINESS ADVISOR INIT REQUEST")
-        print("="*60)
         data = request.json
-        print(f"Farmer Name: {data.get('name', 'Farmer')}")
-        print(f"Location: {data.get('state')}, {data.get('district')}, {data.get('village')}")
-        print(f"Land: {data.get('land_size')} {data.get('land_unit', 'acres')}")
-        print(f"Capital: ₹{float(data.get('capital', 100000)):,.0f}")
-        print(f"Crops: {data.get('crops_grown', [])}")
+        name = data.get('name', 'Farmer')
+        print(f"[ADVISOR] Init -> Farmer: {name}")
         
         profile = FarmerProfile(
-            name=data.get('name', 'Farmer'),
-            land_size=float(data.get('land_size', 5.0)),
+            name=name,
+            land_size=float(data.get('land_size', 5)),
             capital=float(data.get('capital', 100000)),
             market_access=data.get('market_access', 'moderate'),
             skills=data.get('skills', []),
-            risk_level=data.get('risk_level', 'low'),
+            risk_level=data.get('risk_level', 'medium'),
             time_availability=data.get('time_availability', 'full-time'),
             experience_years=int(data.get('experience_years', 0)),
-            language=data.get('language', 'english'),
+            language=data.get('language', 'english').lower(),
             selling_preference=data.get('selling_preference'),
             recovery_timeline=data.get('recovery_timeline'),
             loss_tolerance=data.get('loss_tolerance'),
@@ -229,25 +222,17 @@ def init_advisor():
             land_unit=data.get('land_unit', 'acres')
         )
         
-        print("Initializing KrishiSaarthi Advisor...")
-        advisor = KrishiSaarthiAdvisor(profile)
-        
         import uuid
         session_id = str(uuid.uuid4())
+        advisor = KrishiSaarthiAdvisor(profile)
         advisor_sessions[session_id] = advisor
-        print(f"Session Created: {session_id}")
-        print(f"Active Sessions: {len(advisor_sessions)}")
         
-        print("Generating recommendations...")
         try:
             recommendations = advisor.generate_recommendations()
-            print(f"Init Complete - Returning {len(recommendations)} recommendations")
         except Exception as rec_err:
-             print(f"Error generating recommendations: {rec_err}")
              recommendations = advisor._get_fallback_recommendations()
-             print(f"Returning {len(recommendations)} fallback recommendations")
         
-        print("="*60 + "\n")
+        print(f"[ADVISOR] Success -> Session: {session_id[:8]}... ({len(recommendations)} recs)")
         
         return jsonify({
             'success': True,
@@ -256,68 +241,91 @@ def init_advisor():
             'message': 'Business advisor initialized successfully'
         })
     except Exception as e:
-        print(f"Error in init_advisor: {e}")
+        print(f"[ADVISOR] Init Error: {e}")
         import traceback
         traceback.print_exc()
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/business-advisor/chat', methods=['POST', 'OPTIONS'])
 @require_auth
-def chat_advisor():
+def chat_advisor_api():
     try:
-        print("\n" + "="*60)
-        print("BUSINESS ADVISOR CHAT REQUEST")
-        print("="*60)
         data = request.json
         session_id = data.get('session_id')
         message = data.get('message')
         
-        print(f"Session ID: {session_id}")
-        print(f"User Message: {message}")
-        
-        if not session_id or not message:
-            print("Missing session_id or message")
-            return jsonify({'error': 'session_id and message are required'}), 400
-        if session_id not in advisor_sessions:
-            print(f"Invalid session_id: {session_id}")
-            print(f"Available sessions: {list(advisor_sessions.keys())}")
+        if not session_id or session_id not in advisor_sessions:
             return jsonify({'error': 'Invalid session_id'}), 404
-        
+        if not message:
+            return jsonify({'error': 'message is required'}), 400
+            
         advisor = advisor_sessions[session_id]
-        print("Forwarding to chatbot...")
+        print(f"[ADVISOR] Chat -> Input: \"{message[:50]}...\"")
         response = advisor.chat(message)
-        print(f"Chat Complete - Response length: {len(response)} chars")
-        print("="*60 + "\n")
+        print(f"[ADVISOR] Success -> Output: \"{response[:50]}...\" ({len(response)} chars)")
         
         return jsonify({'success': True, 'response': response})
     except Exception as e:
-        print(f"Error in chat_advisor: {e}")
+        print(f"[ADVISOR] Chat Error: {e}")
         import traceback
         traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/business-advisor/chat/stream', methods=['POST', 'OPTIONS'])
+@require_auth
+def chat_advisor_stream():
+    try:
+        data = request.json
+        session_id = data.get('session_id')
+        message = data.get('message')
+        
+        if not session_id or session_id not in advisor_sessions:
+            return jsonify({'error': 'Invalid session_id'}), 404
+        if not message:
+            return jsonify({'error': 'message is required'}), 400
+            
+        advisor = advisor_sessions[session_id]
+        print(f"[ADVISOR] Stream Chat -> Input: \"{message[:50]}...\"")
+        with open("debug.log", "a") as f:
+            f.write(f"Stream initiated for session {session_id}\n")
+        
+        def generate():
+            try:
+                for i, chunk in enumerate(advisor.stream_chat(message)):
+                    if i == 0:
+                        with open("debug.log", "a") as f:
+                            f.write(f"First chunk yielded for session {session_id}\n")
+                    yield f"data: {json.dumps({'chunk': chunk})}\n\n"
+                with open("debug.log", "a") as f:
+                    f.write(f"Stream completed for session {session_id}\n")
+            except Exception as e:
+                print(f"[ADVISOR] Generator Error: {e}")
+                with open("debug.log", "a") as f:
+                    f.write(f"Generator Error: {e}\n")
+                yield f"data: {json.dumps({'error': str(e)})}\n\n"
+        
+        response = Response(generate(), mimetype='text/event-stream')
+        response.headers['Cache-Control'] = 'no-cache'
+        response.headers['X-Accel-Buffering'] = 'no'
+        response.headers['Connection'] = 'keep-alive'
+        return response
+    except Exception as e:
+        print(f"[ADVISOR] Stream Chat Error: {e}")
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/business-advisor/integrated-advice', methods=['POST', 'OPTIONS'])
 @require_auth
 def integrated_advice():
     try:
-        print("\n" + "="*60)
-        print("INTEGRATED DISEASE ADVICE REQUEST")
-        print("="*60)
         data = request.json
         session_id = data.get('session_id')
         disease_result = data.get('disease_result')
         
-        print(f"Session ID: {session_id}")
-        print(f"Disease Result: {disease_result}")
-        
         if not session_id: 
-            print("Missing session_id")
             return jsonify({'error': 'session_id is required'}), 400
         if session_id not in advisor_sessions: 
-            print(f"Invalid session_id: {session_id}")
             return jsonify({'error': 'Invalid session_id'}), 404
         if not disease_result: 
-            print("Missing disease_result")
             return jsonify({'error': 'disease_result is required'}), 400
         
         advisor = advisor_sessions[session_id]
@@ -326,12 +334,10 @@ def integrated_advice():
         severity = disease_result.get('severity', 'medium')
         
         context_message = f"I have detected {disease} disease in my {crop} crop with {severity} severity."
-        print(f"Generated Context: {context_message}")
-        print("Forwarding to chatbot...")
+        print(f"[ADVISOR] Integrated Advice -> Disease: {disease} on {crop}")
         
         response = advisor.chat(context_message)
-        print(f"Integrated Advice Complete")
-        print("="*60 + "\n")
+        print(f"[ADVISOR] Integrated Advice Success")
         
         return jsonify({
             'success': True,
@@ -339,7 +345,7 @@ def integrated_advice():
             'disease_context': {'crop': crop, 'disease': disease, 'severity': severity}
         })
     except Exception as e:
-        print(f"Error in integrated_advice: {e}")
+        print(f"[ADVISOR] Integrated Advice Error: {e}")
         import traceback
         traceback.print_exc()
         return jsonify({'error': str(e)}), 500
@@ -349,73 +355,82 @@ def integrated_advice():
 @require_auth
 def analyze_waste():
     try:
-        print("\n" + "="*60)
-        print("WASTE-TO-VALUE ANALYZE REQUEST")
-        print("="*60)
         data = request.json
         crop = data.get('crop')
         language = data.get('language', 'English')
-        print(f"Crop: {crop}, Language: {language}")
+        print(f"[WASTE] Analyze -> Crop: {crop}, Lang: {language}")
         
         if not crop:
-            print("Missing crop name")
             return jsonify({'error': 'Crop name is required'}), 400
         
         if waste_engine is None:
-            print("Waste-to-Value Engine not initialized")
-            return jsonify({'error': 'Waste-to-Value service is currently unavailable. Please check if Ollama is running.'}), 503
+            return jsonify({'error': 'Waste-to-Value service is currently unavailable.'}), 503
         
-        print("Forwarding to WasteToValueEngine...")
         result = waste_engine.analyze_waste(crop, language)
-        print(f"Analysis Complete")
-        print("="*60 + "\n")
+        print(f"[WASTE] Success -> Result: {result.get('conclusion', {}).get('title', 'N/A')}")
         
-        return jsonify({
-            'success': True,
-            'result': result
-        })
+        return jsonify({'success': True, 'result': result})
     except Exception as e:
-        print(f"Server Error in analyze_waste: {e}")
-        import traceback
-        traceback.print_exc()
+        print(f"[WASTE] Analyze Error: {e}")
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/waste-to-value/chat', methods=['POST', 'OPTIONS'])
 @require_auth
 def chat_waste_api():
     try:
-        print("\n" + "="*60)
-        print("WASTE-TO-VALUE CHAT REQUEST")
-        print("="*60)
         data = request.json
         context = data.get('context')
         question = data.get('question')
         language = data.get('language', 'English')
         
-        print(f"Question: {question}, Language: {language}")
-        print(f"Context Keys: {list(context.keys()) if context else 'None'}")
+        print(f"[WASTE] Chat -> Question: \"{question[:50]}...\"")
         
         if not context or not question:
-            print("Missing context or question")
             return jsonify({'error': 'Context and question are required'}), 400
         
         if waste_engine is None:
-            print("Waste-to-Value Engine not initialized")
-            return jsonify({'error': 'Waste-to-Value service is currently unavailable. Please check if Ollama is running.'}), 503
+            return jsonify({'error': 'Waste-to-Value service is currently unavailable.'}), 503
         
-        print("Forwarding to WasteToValueEngine...")
         response = waste_engine.chat_waste(context, question, language)
-        print(f"Chat Complete")
-        print("="*60 + "\n")
+        print(f"[WASTE] Success -> Response Length: {len(response)} chars")
         
-        return jsonify({
-            'success': True,
-            'response': response
-        })
+        return jsonify({'success': True, 'response': response})
     except Exception as e:
-        print(f"Chat Server Error: {e}")
-        import traceback
-        traceback.print_exc()
+        print(f"[WASTE] Chat Error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/waste-to-value/chat/stream', methods=['POST', 'OPTIONS'])
+@require_auth
+def chat_waste_stream():
+    try:
+        data = request.json
+        context = data.get('context')
+        question = data.get('question')
+        language = data.get('language', 'English')
+        
+        print(f"[WASTE] Stream Chat -> Question: \"{question[:50]}...\"")
+        
+        if not context or not question:
+            return jsonify({'error': 'Context and question are required'}), 400
+        
+        if waste_engine is None:
+            return jsonify({'error': 'Waste-to-Value service is currently unavailable.'}), 503
+        
+        def generate():
+            try:
+                for chunk in waste_engine.stream_chat_waste(context, question, language):
+                    yield f"data: {json.dumps({'chunk': chunk})}\n\n"
+            except Exception as e:
+                print(f"[WASTE] Generator Error: {e}")
+                yield f"data: {json.dumps({'error': str(e)})}\n\n"
+        
+        response = Response(generate(), mimetype='text/event-stream')
+        response.headers['Cache-Control'] = 'no-cache'
+        response.headers['X-Accel-Buffering'] = 'no'
+        response.headers['Connection'] = 'keep-alive'
+        return response
+    except Exception as e:
+        print(f"[WASTE] Stream Chat Error: {e}")
         return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':

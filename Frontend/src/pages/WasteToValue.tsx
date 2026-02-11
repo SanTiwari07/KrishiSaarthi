@@ -127,7 +127,18 @@ export default function WasteToValue() {
 
         try {
             const token = await auth.currentUser?.getIdToken();
-            const response = await fetch(`${API_BASE_URL}/waste-to-value/chat`, {
+
+            // Create a placeholder AI message for streaming
+            const aiMsgId = (Date.now() + 1).toString();
+            const initialAiMsg: ChatMessage = {
+                id: aiMsgId,
+                sender: 'ai',
+                text: '',
+                timestamp: new Date()
+            };
+            setMessages(prev => [...prev, initialAiMsg]);
+
+            const response = await fetch(`${API_BASE_URL}/waste-to-value/chat/stream`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -140,21 +151,39 @@ export default function WasteToValue() {
                 }),
             });
 
-            const data = await response.json();
-            let aiText = "I apologize, I couldn't connect to the server.";
+            if (!response.ok) throw new Error('Failed to connect to streaming API');
 
-            if (data.success) {
-                aiText = data.response;
+            const reader = response.body?.getReader();
+            if (!reader) throw new Error('ReadableStream not supported');
+
+            const decoder = new TextDecoder();
+            let accumulatedResponse = '';
+
+            // Consume the stream
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+
+                const chunk = decoder.decode(value, { stream: true });
+                const lines = chunk.split('\n');
+
+                for (const line of lines) {
+                    if (line.startsWith('data: ')) {
+                        try {
+                            const data = JSON.parse(line.slice(6));
+                            if (data.chunk) {
+                                accumulatedResponse += data.chunk;
+                                // Update the messages array with the accumulated text
+                                setMessages(prev => prev.map(msg =>
+                                    msg.id === aiMsgId ? { ...msg, text: accumulatedResponse } : msg
+                                ));
+                            }
+                        } catch (e) {
+                            console.error('Error parsing SSE chunk:', e);
+                        }
+                    }
+                }
             }
-
-            const aiMsg: ChatMessage = {
-                id: (Date.now() + 1).toString(),
-                sender: 'ai',
-                text: aiText,
-                timestamp: new Date()
-            };
-            setMessages(prev => [...prev, aiMsg]);
-
         } catch (error) {
             console.error("Chat Error:", error);
             const errorMsg: ChatMessage = {

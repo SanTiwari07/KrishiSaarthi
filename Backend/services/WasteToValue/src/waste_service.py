@@ -11,7 +11,7 @@ class WasteToValueEngine:
         model_name = os.getenv("OLLAMA_MODEL", "llama3.2")
         base_url = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
         
-        self.llm = ChatOllama(
+        self.json_llm = ChatOllama(
             model=model_name,
             temperature=0.2,
             format="json",
@@ -19,12 +19,12 @@ class WasteToValueEngine:
             num_predict=3072
         )
         
-        # Separate LLM for chat (No JSON enforcement)
+        # LLM for chat (No JSON enforcement)
         self.chat_llm = ChatOllama(
             model=model_name,
             temperature=0.4,
             base_url=base_url,
-            num_predict=2048
+            num_predict=1200 # Balanced num_predict for streaming
         )
 
     def analyze_waste(self, crop_name: str, language: str = "English") -> dict:
@@ -35,25 +35,14 @@ class WasteToValueEngine:
             ("system", WASTE_TO_VALUE_SYSTEM_PROMPT + "\n" + GUARDRAIL_PROMPT),
             ("human", "{input}"),
         ])
-        chain = prompt | self.llm | JsonOutputParser()
+        chain = prompt | self.json_llm | JsonOutputParser() # Use json_llm for analysis
 
         try:
-            print("\n" + "="*60)
-            print(f"WASTE-TO-VALUE ANALYSIS ({language})")
-            print("="*60)
-            print(f"Crop: {crop_name}")
-            print("Invoking LLM for waste analysis...")
-            
             response = chain.invoke({"input": crop_name, "language": language})
             
             # Accuracy Sanity Check
             self._validate_results(response)
             
-            print(f"LLM Response Received & Validated")
-            print(f"Options Generated: {len(response.get('options', []))}")
-            if response.get('conclusion'):
-                print(f"Recommendation: {response['conclusion'].get('title', 'N/A')}")
-            print("="*60 + "\n")
             
             # Map to legacy schema for frontend compatibility
             legacy_response = self._map_to_legacy_schema(response)
@@ -144,7 +133,7 @@ class WasteToValueEngine:
 
     def chat_waste(self, context: dict, user_question: str, language: str = "English") -> str:
         """
-        Answers user questions based on the detailed waste analysis context.
+        Answers user questions based on the detailed waste analysis context (Synchronous).
         """
         chat_prompt = ChatPromptTemplate.from_messages([
             ("system", """You are a helpful agricultural expert assistant.
@@ -179,21 +168,11 @@ class WasteToValueEngine:
             # Convert context dict to a readable string
             context_str = json.dumps(context, indent=2)
             
-            print("\n" + "="*60)
-            print(f"WASTE-TO-VALUE CHAT ({language})")
-            print("="*60)
-            print(f"User Question: {user_question}")
-            print(f"Context Size: {len(context_str)} chars")
-            print("Invoking LLM for chat response...")
-            
             response = chat_chain.invoke({
                 "context_str": context_str, 
                 "question": user_question
             })
             
-            print(f"LLM Response Received ({len(response)} chars)")
-            print(f"Response Preview: {response[:150]}..." if len(response) > 150 else f"Full Response: {response}")
-            print("="*60 + "\n")
             
             return response
         except Exception as e:
@@ -201,3 +180,44 @@ class WasteToValueEngine:
             import traceback
             traceback.print_exc()
             return "I apologize, but I'm having trouble connecting to the knowledge base right now. Please try again."
+
+    def stream_chat_waste(self, context: dict, user_question: str, language: str = "English"):
+        """
+        Answers user questions based on the detailed waste analysis context (Streaming).
+        """
+        chat_prompt = ChatPromptTemplate.from_messages([
+            ("system", """You are a helpful agricultural expert assistant.
+            The user has just received an analysis for converting specific crop waste into value.
+            
+            CONTEXT (The analysis results):
+            {{context_str}}
+            
+            YOUR GOAL:
+            Answer the user's question specifically based on the options provided in the context.
+            Respond in the specified LANGUAGE: {language}.
+            
+            FORMATTING RULES:
+            - Use **Bold** for key numbers, machine names, and prices.
+            - Use bullet points (•) for lists to make them readable.
+            - **ALWAYS use double newlines** between paragraphs.
+            - Keep responses concise but well-structured.
+            - Be encouraging and practical (Indian context).
+            
+            Do not hallucinate new options not in the context unless asked for alternatives.
+            """),
+            ("human", "{question}"),
+        ])
+        
+        from langchain_core.output_parsers import StrOutputParser
+        chat_chain = chat_prompt.partial(language=language) | self.chat_llm | StrOutputParser()
+        
+        try:
+            context_str = json.dumps(context, indent=2)
+            for chunk in chat_chain.stream({
+                "context_str": context_str, 
+                "question": user_question
+            }):
+                yield chunk
+        except Exception as e:
+            print(f"Error in Waste Stream Chat: {e}")
+            yield "I apologize, but I'm having trouble connecting to the knowledge base right now. Please try again."

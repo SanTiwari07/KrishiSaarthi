@@ -296,10 +296,9 @@ class KrishiSaarthiAdvisor:
                 model=DEFAULT_OLLAMA_MODEL,
                 temperature=0.6,  # Balanced for accurate yet natural responses (quality optimized)
                 num_ctx=4096,     # Full context window for complete conversation memory
-                num_predict=1500, # Maximum response length for detailed, comprehensive answers
+                num_predict=1200, # Balanced response length for streaming
                 base_url=DEFAULT_OLLAMA_BASE_URL,
             )
-            print("ChatOllama LLM initialized successfully")
         except Exception as e:
             print(f"Error initializing ChatOllama: {e}")
             print(
@@ -334,11 +333,9 @@ class KrishiSaarthiAdvisor:
         
         # Chain: Prompt -> LLM -> String Output
         self.chain = prompt | self.llm | StrOutputParser()
-        
-        print("Runnable chain initialized")
     
     def chat(self, user_message: str) -> str:
-        """Send message and get response"""
+        """Send message and get response (Synchronous)"""
         if not self.chain:
             return "Error: AI not initialized. Check server logs."
             
@@ -346,22 +343,11 @@ class KrishiSaarthiAdvisor:
             # excessive sanitization can break multilingual inputs, so we focus on script tags
             clean_message = html.escape(user_message)
             
-            print("\n" + "="*60)
-            print("LLM CHAT REQUEST")
-            print("="*60)
-            print(f"User Message: {clean_message}")
-            print(f"Chat History Length: {len(self.chat_history)} messages")
-            print("Invoking LLM...")
-            
             # Invoke chain with current history
             response = self.chain.invoke({
                 "chat_history": self.chat_history,
                 "input": clean_message
             })
-            
-            print(f"LLM Response Received ({len(response)} chars)")
-            print(f"Response Preview: {response[:200]}..." if len(response) > 200 else f"Full Response: {response}")
-            print("="*60 + "\n")
             
             # Update history manually
             self.chat_history.append(HumanMessage(content=clean_message))
@@ -371,6 +357,32 @@ class KrishiSaarthiAdvisor:
         except Exception as e:
             print(f"Chat Error: {e}")
             return f"Error: {str(e)}"
+
+    def stream_chat(self, user_message: str):
+        """Send message and yield response tokens (Streaming)"""
+        if not self.chain:
+            yield "Error: AI not initialized. Check server logs."
+            return
+
+        try:
+            clean_message = html.escape(user_message)
+            full_response = ""
+            
+            # Use the .stream() method of the chain
+            for chunk in self.chain.stream({
+                "chat_history": self.chat_history,
+                "input": clean_message
+            }):
+                full_response += chunk
+                yield chunk
+            
+            # Update history after full response is generated
+            self.chat_history.append(HumanMessage(content=clean_message))
+            self.chat_history.append(AIMessage(content=full_response))
+            
+        except Exception as e:
+            print(f"Stream Chat Error: {e}")
+            yield f"Error: {str(e)}"
     
     def get_chat_history(self) -> str:
         """Get conversation history as a formatted string (for debugging/display)"""
@@ -436,20 +448,9 @@ class KrishiSaarthiAdvisor:
         """
         
         try:
-            print("\n" + "="*60)
-            print("LLM RECOMMENDATION GENERATION")
-            print("="*60)
-            print("Generating recommendations...")
-            print(f"Farmer Profile: {self.profile.name}, Land: {self.profile.land_size} acres, Capital: ₹{self.profile.capital:,.0f}")
-            print("Invoking LLM for business recommendations...")
-            
             # Use LLM directly for one-off generation
             response_msg = self.llm.invoke(prompt_text)
             response = response_msg.content
-
-            
-            print(f"LLM Response Received ({len(response)} chars)")
-            print(f"Raw LLM Output (first 300 chars): {response[:300]}..." if len(response) > 300 else f"Raw LLM Output: {response}")
             
             # Robust JSON extraction
             cleaned_response = response.strip()
@@ -465,12 +466,8 @@ class KrishiSaarthiAdvisor:
             # Remove trailing commas before closing braces/brackets (common LLM error)
             cleaned_response = re.sub(r',(\s*[}\]])', r'\1', cleaned_response)
             
-            # Try to parse JSON
             try:
                 recommendations = json.loads(cleaned_response)
-                print(f"Successfully parsed {len(recommendations)} recommendations")
-                for i, rec in enumerate(recommendations, 1):
-                    print(f"   {i}. {rec.get('title', 'N/A')} (Score: {rec.get('match_score', 0)})")
             except json.JSONDecodeError as json_err:
                 print(f"Warning: JSON parse error: {json_err}")
                 print(f"Raw response (first 500 chars): {response[:500]}")
@@ -485,8 +482,6 @@ class KrishiSaarthiAdvisor:
             if not valid_recs:
                 raise ValueError("No valid recommendations generated")
             
-            print(f"Returning {len(valid_recs[:3])} valid recommendations")
-            print("="*60 + "\n")
             return valid_recs[:3]
             
         except Exception as e:

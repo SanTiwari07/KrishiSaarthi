@@ -74,6 +74,13 @@ def _load_model() -> tf.keras.Model:
     return _MODEL
 
 
+def init_model():
+    """Explicitly load the model to warm it up."""
+    print("Preloading Disease Detection Model...")
+    _load_model()
+    print("Disease Detection Model loaded successfully.")
+
+
 def _preprocess(image_path: str | os.PathLike) -> np.ndarray:
     """Resize and normalize the image for prediction."""
     with Image.open(image_path) as img:
